@@ -85,6 +85,11 @@
             transform: translateY(-2px);
         }
 
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
         .hidden {
             display: none;
         }
@@ -259,6 +264,38 @@
             margin-top: 20px;
         }
 
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .alert-error {
+            background: #fee;
+            color: #c33;
+            border: 1px solid #fcc;
+        }
+
+        .alert-success {
+            background: #efe;
+            color: #3c3;
+            border: 1px solid #cfc;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
         @media (max-width: 768px) {
             .header h1 {
                 font-size: 1.8em;
@@ -280,23 +317,24 @@
         <!-- 登录表单 -->
         <div id="loginForm" class="card">
             <h2 style="color: #667eea; margin-bottom: 20px; text-align: center;">用户信息登录</h2>
+            <div id="alertContainer"></div>
             <div class="form-group">
                 <label>姓名</label>
                 <input type="text" id="name" placeholder="请输入您的姓名" required>
             </div>
             <div class="form-group">
                 <label>身高 (cm)</label>
-                <input type="number" id="height" placeholder="例如：170" required>
+                <input type="number" id="height" placeholder="例如：170" required min="100" max="250">
             </div>
             <div class="form-group">
                 <label>体重 (kg)</label>
-                <input type="number" id="weight" placeholder="例如：65" required>
+                <input type="number" id="weight" placeholder="例如：65" required min="30" max="200">
             </div>
             <div class="form-group">
                 <label>年龄</label>
-                <input type="number" id="age" placeholder="例如：25" required>
+                <input type="number" id="age" placeholder="例如：25" required min="1" max="120">
             </div>
-            <button class="btn" onclick="login()">开始健康管理</button>
+            <button class="btn" id="loginBtn">开始健康管理</button>
         </div>
 
         <!-- 主仪表板 -->
@@ -352,7 +390,7 @@
                     <div id="statisticsContent"></div>
                 </div>
 
-                <button class="btn logout-btn" onclick="logout()">退出登录</button>
+                <button class="btn logout-btn" id="logoutBtn">退出登录</button>
             </div>
         </div>
     </div>
@@ -360,10 +398,11 @@
     <script type="module">
         // Import the functions you need from the SDKs you need
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, set, push, get, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, set, push, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
 
         // Your web app's Firebase configuration
+        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
         const firebaseConfig = {
             apiKey: "AIzaSyABck4GsHq7x68LUQQ0tqPg9Lj6XoYXi1g",
             authDomain: "project-2607536693074291471.firebaseapp.com",
@@ -376,12 +415,32 @@
         };
 
         // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const analytics = getAnalytics(app);
-        const database = getDatabase(app);
+        let app, database, analytics;
+        let isFirebaseInitialized = false;
+
+        try {
+            app = initializeApp(firebaseConfig);
+            database = getDatabase(app);
+            analytics = getAnalytics(app);
+            isFirebaseInitialized = true;
+            console.log('✅ Firebase 初始化成功');
+        } catch (error) {
+            console.error('❌ Firebase 初始化失败:', error);
+            showAlert('Firebase 初始化失败: ' + error.message, 'error');
+        }
 
         // 全局变量
-        window.currentUser = null;
+        let currentUser = null;
+
+        // 显示提示信息
+        function showAlert(message, type = 'error') {
+            const alertContainer = document.getElementById('alertContainer');
+            const alertClass = type === 'error' ? 'alert-error' : 'alert-success';
+            alertContainer.innerHTML = `<div class="alert ${alertClass}">${message}</div>`;
+            setTimeout(() => {
+                alertContainer.innerHTML = '';
+            }, 5000);
+        }
 
         // 计算BMI
         function calculateBMI(height, weight) {
@@ -399,7 +458,6 @@
 
         // 计算每日推荐热量
         function calculateDailyCalories(weight, height, age, gender = 'male') {
-            // 使用Harris-Benedict公式
             if (gender === 'male') {
                 return Math.round(88.362 + (13.397 * weight) + (4.799 * height) - (5.677 * age));
             } else {
@@ -466,16 +524,37 @@
         }
 
         // 登录函数
-        window.login = async function() {
-            const name = document.getElementById('name').value;
+        async function handleLogin() {
+            const loginBtn = document.getElementById('loginBtn');
+            const name = document.getElementById('name').value.trim();
             const height = parseFloat(document.getElementById('height').value);
             const weight = parseFloat(document.getElementById('weight').value);
             const age = parseInt(document.getElementById('age').value);
 
+            // 验证输入
             if (!name || !height || !weight || !age) {
-                alert('请填写所有信息！');
+                showAlert('请填写所有信息！', 'error');
                 return;
             }
+
+            if (height < 100 || height > 250) {
+                showAlert('身高应在100-250cm之间！', 'error');
+                return;
+            }
+
+            if (weight < 30 || weight > 200) {
+                showAlert('体重应在30-200kg之间！', 'error');
+                return;
+            }
+
+            if (age < 1 || age > 120) {
+                showAlert('年龄应在1-120岁之间！', 'error');
+                return;
+            }
+
+            // 禁用按钮，防止重复提交
+            loginBtn.disabled = true;
+            loginBtn.innerHTML = '<span class="loading"></span> 正在保存...';
 
             const bmi = calculateBMI(height, weight);
             const bmiStatus = getBMIStatus(bmi);
@@ -491,19 +570,40 @@
                 timestamp: Date.now()
             };
 
+            if (!isFirebaseInitialized) {
+                showAlert('Firebase 未正确初始化，数据将仅保存在本地', 'error');
+                loginBtn.disabled = false;
+                loginBtn.textContent = '开始健康管理';
+                currentUser = userData;
+                showDashboard(userData, dailyCalories);
+                return;
+            }
+
             try {
                 // 保存到Firebase
-                const userRef = push(ref(database, 'users'));
-                await set(userRef, userData);
-
-                window.currentUser = userData;
+                const usersRef = ref(database, 'users');
+                const newUserRef = push(usersRef);
+                await set(newUserRef, userData);
+                
+                console.log('✅ 数据保存成功');
+                showAlert('登录成功！', 'success');
+                
+                currentUser = userData;
                 showDashboard(userData, dailyCalories);
                 loadStatistics();
+                
             } catch (error) {
-                console.error('保存数据失败:', error);
-                alert('保存数据失败，请重试');
+                console.error('❌ 保存数据失败:', error);
+                showAlert('保存数据失败: ' + error.message + '。数据将仅保存在本地。', 'error');
+                
+                // 即使保存失败，也显示仪表板
+                currentUser = userData;
+                showDashboard(userData, dailyCalories);
+            } finally {
+                loginBtn.disabled = false;
+                loginBtn.textContent = '开始健康管理';
             }
-        };
+        }
 
         // 显示仪表板
         function showDashboard(userData, dailyCalories) {
@@ -564,7 +664,7 @@
             });
             document.getElementById('unhealthyFoods').innerHTML = unhealthyHTML;
 
-            // 显示运动建议（以一份炸鸡为例）
+            // 显示运动建议
             const exercises = getExerciseSuggestions(500);
             let exerciseHTML = '<p style="color: #666; margin-bottom: 10px;">消耗一份炸鸡（500卡）需要：</p>';
             exercises.forEach(ex => {
@@ -579,86 +679,95 @@
         }
 
         // 加载统计数据
-        async function loadStatistics() {
-            const usersRef = ref(database, 'users');
-            onValue(usersRef, (snapshot) => {
-                const data = snapshot.val();
-                if (!data) return;
+        function loadStatistics() {
+            if (!isFirebaseInitialized) {
+                document.getElementById('statisticsContent').innerHTML = '<p style="color: #666;">Firebase未初始化，无法加载统计数据</p>';
+                return;
+            }
 
-                const users = Object.values(data);
-                
-                // 按年龄段分组
-                const ageGroups = {
-                    '18-30': { total: 0, normal: 0, overweight: 0 },
-                    '31-45': { total: 0, normal: 0, overweight: 0 },
-                    '46-60': { total: 0, normal: 0, overweight: 0 },
-                    '60+': { total: 0, normal: 0, overweight: 0 }
-                };
-
-                users.forEach(user => {
-                    let group;
-                    if (user.age <= 30) group = '18-30';
-                    else if (user.age <= 45) group = '31-45';
-                    else if (user.age <= 60) group = '46-60';
-                    else group = '60+';
-
-                    ageGroups[group].total++;
-                    if (user.bmi >= 18.5 && user.bmi < 24) {
-                        ageGroups[group].normal++;
-                    } else if (user.bmi >= 24) {
-                        ageGroups[group].overweight++;
+            try {
+                const usersRef = ref(database, 'users');
+                onValue(usersRef, (snapshot) => {
+                    const data = snapshot.val();
+                    if (!data) {
+                        document.getElementById('statisticsContent').innerHTML = '<p style="color: #666;">暂无统计数据</p>';
+                        return;
                     }
-                });
 
-                let statsHTML = '';
-                Object.keys(ageGroups).forEach(group => {
-                    const stats = ageGroups[group];
-                    if (stats.total > 0) {
-                        const normalPercent = ((stats.normal / stats.total) * 100).toFixed(1);
-                        const overweightPercent = ((stats.overweight / stats.total) * 100).toFixed(1);
-                        
-                        statsHTML += `
-                            <div class="stat-bar">
-                                <h4>${group}岁年龄段 (总人数: ${stats.total})</h4>
-                                <div style="margin-bottom: 10px;">
-                                    <small>正常体重: ${normalPercent}%</small>
-                                    <div class="bar-container">
-                                        <div class="bar-fill" style="width: ${normalPercent}%; background: linear-gradient(90deg, #43e97b 0%, #38f9d7 100%);">
-                                            ${normalPercent}%
+                    const users = Object.values(data);
+                    
+                    // 按年龄段分组
+                    const ageGroups = {
+                        '18-30': { total: 0, normal: 0, overweight: 0 },
+                        '31-45': { total: 0, normal: 0, overweight: 0 },
+                        '46-60': { total: 0, normal: 0, overweight: 0 },
+                        '60+': { total: 0, normal: 0, overweight: 0 }
+                    };
+
+                    users.forEach(user => {
+                        let group;
+                        if (user.age <= 30) group = '18-30';
+                        else if (user.age <= 45) group = '31-45';
+                        else if (user.age <= 60) group = '46-60';
+                        else group = '60+';
+
+                        ageGroups[group].total++;
+                        if (user.bmi >= 18.5 && user.bmi < 24) {
+                            ageGroups[group].normal++;
+                        } else if (user.bmi >= 24) {
+                            ageGroups[group].overweight++;
+                        }
+                    });
+
+                    let statsHTML = '';
+                    Object.keys(ageGroups).forEach(group => {
+                        const stats = ageGroups[group];
+                        if (stats.total > 0) {
+                            const normalPercent = ((stats.normal / stats.total) * 100).toFixed(1);
+                            const overweightPercent = ((stats.overweight / stats.total) * 100).toFixed(1);
+                            
+                            statsHTML += `
+                                <div class="stat-bar">
+                                    <h4>${group}岁年龄段 (总人数: ${stats.total})</h4>
+                                    <div style="margin-bottom: 10px;">
+                                        <small>正常体重: ${normalPercent}%</small>
+                                        <div class="bar-container">
+                                            <div class="bar-fill" style="width: ${normalPercent}%; background: linear-gradient(90deg, #43e97b 0%, #38f9d7 100%);">
+                                                ${normalPercent}%
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <small>超重/肥胖: ${overweightPercent}%</small>
+                                        <div class="bar-container">
+                                            <div class="bar-fill" style="width: ${overweightPercent}%; background: linear-gradient(90deg, #f093fb 0%, #f5576c 100%);">
+                                                ${overweightPercent}%
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                                <div>
-                                    <small>超重/肥胖: ${overweightPercent}%</small>
-                                    <div class="bar-container">
-                                        <div class="bar-fill" style="width: ${overweightPercent}%; background: linear-gradient(90deg, #f093fb 0%, #f5576c 100%);">
-                                            ${overweightPercent}%
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
+                            `;
+                        }
+                    });
+
+                    if (statsHTML === '') {
+                        statsHTML = '<p style="color: #666;">暂无统计数据</p>';
                     }
+
+                    document.getElementById('statisticsContent').innerHTML = statsHTML;
+                }, (error) => {
+                    console.error('❌ 读取统计数据失败:', error);
+                    document.getElementById('statisticsContent').innerHTML = '<p style="color: #666;">加载统计数据失败</p>';
                 });
-
-                if (statsHTML === '') {
-                    statsHTML = '<p style="color: #666;">暂无统计数据</p>';
-                }
-
-                document.getElementById('statisticsContent').innerHTML = statsHTML;
-            });
+            } catch (error) {
+                console.error('❌ 设置统计监听失败:', error);
+                document.getElementById('statisticsContent').innerHTML = '<p style="color: #666;">加载统计数据失败</p>';
+            }
         }
 
         // 退出登录
-        window.logout = function() {
-            window.currentUser = null;
+        function handleLogout() {
+            currentUser = null;
             document.getElementById('loginForm').classList.remove('hidden');
             document.getElementById('dashboard').classList.add('hidden');
-            document.getElementById('name').value = '';
-            document.getElementById('height').value = '';
-            document.getElementById('weight').value = '';
-            document.getElementById('age').value = '';
-        };
-    </script>
-</body>
-</html>
+            document.getElementById('name').
