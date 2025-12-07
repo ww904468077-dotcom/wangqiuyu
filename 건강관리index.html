@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能健康管理系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .info-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .info-card h3 {
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        .info-card p {
+            font-size: 2em;
+            font-weight: bold;
+        }
+
+        .meal-plan {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+
+        .meal-plan h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
+        .meal-item {
+            background: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .meal-item h4 {
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .meal-item ul {
+            list-style: none;
+            padding-left: 10px;
+        }
+
+        .meal-item li {
+            padding: 5px 0;
+            color: #666;
+        }
+
+        .calories-badge {
+            display: inline-block;
+            background: #ff6b6b;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+
+        .unhealthy-foods {
+            background: #fff3cd;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            border: 2px solid #ffc107;
+        }
+
+        .unhealthy-foods h3 {
+            color: #ff6b6b;
+            margin-bottom: 15px;
+        }
+
+        .food-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .food-card {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .exercise-section {
+            background: #e7f3ff;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+
+        .exercise-section h3 {
+            color: #1976d2;
+            margin-bottom: 15px;
+        }
+
+        .exercise-item {
+            background: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .statistics {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-bar {
+            margin: 15px 0;
+        }
+
+        .stat-bar h4 {
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .bar-container {
+            background: #e0e0e0;
+            height: 30px;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            transition: width 1s ease;
+        }
+
+        .health-tip {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+        }
+
+        .health-tip h3 {
+            margin-bottom: 10px;
+        }
+
+        .logout-btn {
+            background: #ff6b6b;
+            padding: 10px 30px;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+            
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏥 智能健康管理系统</h1>
+            <p>您的专属健康顾问</p>
+        </div>
+
+        <!-- 登录表单 -->
+        <div id="loginForm" class="card">
+            <h2 style="color: #667eea; margin-bottom: 20px; text-align: center;">用户信息登录</h2>
+            <div class="form-group">
+                <label>姓名</label>
+                <input type="text" id="name" placeholder="请输入您的姓名" required>
+            </div>
+            <div class="form-group">
+                <label>身高 (cm)</label>
+                <input type="number" id="height" placeholder="例如：170" required>
+            </div>
+            <div class="form-group">
+                <label>体重 (kg)</label>
+                <input type="number" id="weight" placeholder="例如：65" required>
+            </div>
+            <div class="form-group">
+                <label>年龄</label>
+                <input type="number" id="age" placeholder="例如：25" required>
+            </div>
+            <button class="btn" onclick="login()">开始健康管理</button>
+        </div>
+
+        <!-- 主仪表板 -->
+        <div id="dashboard" class="hidden">
+            <div class="card">
+                <h2 style="color: #667eea; margin-bottom: 20px;">欢迎回来，<span id="userName"></span>！</h2>
+                
+                <div class="dashboard">
+                    <div class="info-card">
+                        <h3>BMI指数</h3>
+                        <p id="bmiValue"></p>
+                        <small id="bmiStatus"></small>
+                    </div>
+                    <div class="info-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                        <h3>每日推荐热量</h3>
+                        <p id="dailyCalories"></p>
+                    </div>
+                    <div class="info-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                        <h3>健康状态</h3>
+                        <p id="healthStatus"></p>
+                    </div>
+                </div>
+
+                <!-- 个性化健康提示 -->
+                <div class="health-tip">
+                    <h3>💡 个性化健康建议</h3>
+                    <p id="healthAdvice"></p>
+                </div>
+
+                <!-- 健康食谱 -->
+                <div class="meal-plan">
+                    <h3>🍽️ 今日健康食谱</h3>
+                    <div id="mealPlanContent"></div>
+                </div>
+
+                <!-- 不健康食品热量 -->
+                <div class="unhealthy-foods">
+                    <h3>⚠️ 不健康食品热量对照</h3>
+                    <p style="color: #666; margin-bottom: 15px;">这些食品应该适量食用</p>
+                    <div class="food-grid" id="unhealthyFoods"></div>
+                </div>
+
+                <!-- 运动建议 -->
+                <div class="exercise-section">
+                    <h3>🏃 运动建议</h3>
+                    <p style="color: #666; margin-bottom: 15px;">以下运动可以帮助您消耗热量</p>
+                    <div id="exerciseContent"></div>
+                </div>
+
+                <!-- 用户群体统计 -->
+                <div class="statistics">
+                    <h3 style="color: #667eea; margin-bottom: 20px;">📊 用户健康数据统计</h3>
+                    <div id="statisticsContent"></div>
+                </div>
+
+                <button class="btn logout-btn" onclick="logout()">退出登录</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, set, push, get, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-analytics.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyABck4GsHq7x68LUQQ0tqPg9Lj6XoYXi1g",
+            authDomain: "project-2607536693074291471.firebaseapp.com",
+            databaseURL: "https://project-2607536693074291471-default-rtdb.firebaseio.com",
+            projectId: "project-2607536693074291471",
+            storageBucket: "project-2607536693074291471.firebasestorage.app",
+            messagingSenderId: "841252265184",
+            appId: "1:841252265184:web:f074d1a9c5e67bb05ec485",
+            measurementId: "G-3G47LDC4KB"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const database = getDatabase(app);
+
+        // 全局变量
+        window.currentUser = null;
+
+        // 计算BMI
+        function calculateBMI(height, weight) {
+            const heightInMeters = height / 100;
+            return (weight / (heightInMeters * heightInMeters)).toFixed(1);
+        }
+
+        // 获取BMI状态
+        function getBMIStatus(bmi) {
+            if (bmi < 18.5) return "偏瘦";
+            if (bmi < 24) return "正常";
+            if (bmi < 28) return "偏胖";
+            return "肥胖";
+        }
+
+        // 计算每日推荐热量
+        function calculateDailyCalories(weight, height, age, gender = 'male') {
+            // 使用Harris-Benedict公式
+            if (gender === 'male') {
+                return Math.round(88.362 + (13.397 * weight) + (4.799 * height) - (5.677 * age));
+            } else {
+                return Math.round(447.593 + (9.247 * weight) + (3.098 * height) - (4.330 * age));
+            }
+        }
+
+        // 生成健康食谱
+        function generateMealPlan(bmi, age, dailyCalories) {
+            const breakfast = {
+                title: "早餐",
+                foods: [
+                    { name: "燕麦粥", calories: 150, desc: "富含膳食纤维" },
+                    { name: "煮鸡蛋", calories: 80, desc: "优质蛋白质" },
+                    { name: "全麦面包", calories: 120, desc: "复合碳水化合物" },
+                    { name: "牛奶", calories: 100, desc: "钙质补充" }
+                ]
+            };
+
+            const lunch = {
+                title: "午餐",
+                foods: [
+                    { name: "糙米饭", calories: 200, desc: "100克" },
+                    { name: "鸡胸肉", calories: 165, desc: "150克，低脂高蛋白" },
+                    { name: "西兰花", calories: 50, desc: "维生素C丰富" },
+                    { name: "番茄炒蛋", calories: 120, desc: "营养均衡" }
+                ]
+            };
+
+            const dinner = {
+                title: "晚餐",
+                foods: [
+                    { name: "紫薯", calories: 120, desc: "100克，富含花青素" },
+                    { name: "清蒸鱼", calories: 150, desc: "150克，Omega-3" },
+                    { name: "菠菜汤", calories: 40, desc: "补铁" },
+                    { name: "豆腐", calories: 80, desc: "植物蛋白" }
+                ]
+            };
+
+            return [breakfast, lunch, dinner];
+        }
+
+        // 不健康食品数据
+        const unhealthyFoods = [
+            { name: "炸鸡", calories: 500, unit: "200克" },
+            { name: "啤酒", calories: 150, unit: "330ml" },
+            { name: "薯条", calories: 320, unit: "100克" },
+            { name: "汉堡", calories: 550, unit: "1个" },
+            { name: "奶茶", calories: 400, unit: "500ml" },
+            { name: "巧克力", calories: 550, unit: "100克" },
+            { name: "披萨", calories: 280, unit: "1片" },
+            { name: "可乐", calories: 140, unit: "330ml" }
+        ];
+
+        // 运动消耗数据
+        function getExerciseSuggestions(calories) {
+            return [
+                { name: "快走", time: Math.round(calories / 5), calories: calories },
+                { name: "慢跑", time: Math.round(calories / 10), calories: calories },
+                { name: "游泳", time: Math.round(calories / 12), calories: calories },
+                { name: "骑自行车", time: Math.round(calories / 8), calories: calories },
+                { name: "跳绳", time: Math.round(calories / 15), calories: calories }
+            ];
+        }
+
+        // 登录函数
+        window.login = async function() {
+            const name = document.getElementById('name').value;
+            const height = parseFloat(document.getElementById('height').value);
+            const weight = parseFloat(document.getElementById('weight').value);
+            const age = parseInt(document.getElementById('age').value);
+
+            if (!name || !height || !weight || !age) {
+                alert('请填写所有信息！');
+                return;
+            }
+
+            const bmi = calculateBMI(height, weight);
+            const bmiStatus = getBMIStatus(bmi);
+            const dailyCalories = calculateDailyCalories(weight, height, age);
+
+            const userData = {
+                name: name,
+                height: height,
+                weight: weight,
+                age: age,
+                bmi: parseFloat(bmi),
+                bmiStatus: bmiStatus,
+                timestamp: Date.now()
+            };
+
+            try {
+                // 保存到Firebase
+                const userRef = push(ref(database, 'users'));
+                await set(userRef, userData);
+
+                window.currentUser = userData;
+                showDashboard(userData, dailyCalories);
+                loadStatistics();
+            } catch (error) {
+                console.error('保存数据失败:', error);
+                alert('保存数据失败，请重试');
+            }
+        };
+
+        // 显示仪表板
+        function showDashboard(userData, dailyCalories) {
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('dashboard').classList.remove('hidden');
+            document.getElementById('userName').textContent = userData.name;
+            document.getElementById('bmiValue').textContent = userData.bmi;
+            document.getElementById('bmiStatus').textContent = userData.bmiStatus;
+            document.getElementById('dailyCalories').textContent = dailyCalories + ' 卡';
+            document.getElementById('healthStatus').textContent = userData.bmiStatus === '正常' ? '良好' : '需改善';
+
+            // 个性化健康建议
+            let advice = '';
+            if (userData.bmi < 18.5) {
+                advice = '您的体重偏轻，建议增加营养摄入，多吃高蛋白食物，适量运动增强体质。';
+            } else if (userData.bmi < 24) {
+                advice = '您的体重正常，保持良好的饮食习惯和运动习惯，继续保持！';
+            } else if (userData.bmi < 28) {
+                advice = '您的体重偏重，建议控制饮食热量，增加有氧运动，每周至少运动3-4次。';
+            } else {
+                advice = '您的体重超标较多，建议咨询营养师制定减重计划，配合规律运动，改善饮食结构。';
+            }
+
+            if (userData.age > 50) {
+                advice += ' 由于您的年龄较大，建议定期体检，注意心血管健康。';
+            } else if (userData.age < 25) {
+                advice += ' 您还年轻，养成良好的生活习惯将受益终生。';
+            }
+
+            document.getElementById('healthAdvice').textContent = advice;
+
+            // 显示食谱
+            const mealPlan = generateMealPlan(userData.bmi, userData.age, dailyCalories);
+            let mealHTML = '';
+            mealPlan.forEach(meal => {
+                const totalCalories = meal.foods.reduce((sum, food) => sum + food.calories, 0);
+                mealHTML += `
+                    <div class="meal-item">
+                        <h4>${meal.title} <span class="calories-badge">${totalCalories} 卡</span></h4>
+                        <ul>
+                            ${meal.foods.map(food => `<li>• ${food.name} - ${food.calories}卡 (${food.desc})</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            });
+            document.getElementById('mealPlanContent').innerHTML = mealHTML;
+
+            // 显示不健康食品
+            let unhealthyHTML = '';
+            unhealthyFoods.forEach(food => {
+                unhealthyHTML += `
+                    <div class="food-card">
+                        <h4>${food.name}</h4>
+                        <p style="color: #ff6b6b; font-weight: bold; font-size: 1.2em;">${food.calories} 卡</p>
+                        <small style="color: #666;">${food.unit}</small>
+                    </div>
+                `;
+            });
+            document.getElementById('unhealthyFoods').innerHTML = unhealthyHTML;
+
+            // 显示运动建议（以一份炸鸡为例）
+            const exercises = getExerciseSuggestions(500);
+            let exerciseHTML = '<p style="color: #666; margin-bottom: 10px;">消耗一份炸鸡（500卡）需要：</p>';
+            exercises.forEach(ex => {
+                exerciseHTML += `
+                    <div class="exercise-item">
+                        <span><strong>${ex.name}</strong></span>
+                        <span style="color: #1976d2; font-weight: bold;">${ex.time} 分钟</span>
+                    </div>
+                `;
+            });
+            document.getElementById('exerciseContent').innerHTML = exerciseHTML;
+        }
+
+        // 加载统计数据
+        async function loadStatistics() {
+            const usersRef = ref(database, 'users');
+            onValue(usersRef, (snapshot) => {
+                const data = snapshot.val();
+                if (!data) return;
+
+                const users = Object.values(data);
+                
+                // 按年龄段分组
+                const ageGroups = {
+                    '18-30': { total: 0, normal: 0, overweight: 0 },
+                    '31-45': { total: 0, normal: 0, overweight: 0 },
+                    '46-60': { total: 0, normal: 0, overweight: 0 },
+                    '60+': { total: 0, normal: 0, overweight: 0 }
+                };
+
+                users.forEach(user => {
+                    let group;
+                    if (user.age <= 30) group = '18-30';
+                    else if (user.age <= 45) group = '31-45';
+                    else if (user.age <= 60) group = '46-60';
+                    else group = '60+';
+
+                    ageGroups[group].total++;
+                    if (user.bmi >= 18.5 && user.bmi < 24) {
+                        ageGroups[group].normal++;
+                    } else if (user.bmi >= 24) {
+                        ageGroups[group].overweight++;
+                    }
+                });
+
+                let statsHTML = '';
+                Object.keys(ageGroups).forEach(group => {
+                    const stats = ageGroups[group];
+                    if (stats.total > 0) {
+                        const normalPercent = ((stats.normal / stats.total) * 100).toFixed(1);
+                        const overweightPercent = ((stats.overweight / stats.total) * 100).toFixed(1);
+                        
+                        statsHTML += `
+                            <div class="stat-bar">
+                                <h4>${group}岁年龄段 (总人数: ${stats.total})</h4>
+                                <div style="margin-bottom: 10px;">
+                                    <small>正常体重: ${normalPercent}%</small>
+                                    <div class="bar-container">
+                                        <div class="bar-fill" style="width: ${normalPercent}%; background: linear-gradient(90deg, #43e97b 0%, #38f9d7 100%);">
+                                            ${normalPercent}%
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <small>超重/肥胖: ${overweightPercent}%</small>
+                                    <div class="bar-container">
+                                        <div class="bar-fill" style="width: ${overweightPercent}%; background: linear-gradient(90deg, #f093fb 0%, #f5576c 100%);">
+                                            ${overweightPercent}%
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+
+                if (statsHTML === '') {
+                    statsHTML = '<p style="color: #666;">暂无统计数据</p>';
+                }
+
+                document.getElementById('statisticsContent').innerHTML = statsHTML;
+            });
+        }
+
+        // 退出登录
+        window.logout = function() {
+            window.currentUser = null;
+            document.getElementById('loginForm').classList.remove('hidden');
+            document.getElementById('dashboard').classList.add('hidden');
+            document.getElementById('name').value = '';
+            document.getElementById('height').value = '';
+            document.getElementById('weight').value = '';
+            document.getElementById('age').value = '';
+        };
+    </script>
+</body>
+</html>
