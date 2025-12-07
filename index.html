@@ -15,12 +15,654 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 
 <style>
-/* ... 之前的所有样式保持不变 ... */
+  /* 样式部分保持不变 */
+  :root {
+    --primary: #667eea;
+    --primary-light: #7c8ef2;
+    --primary-dark: #5a67d8;
+    --secondary: #d53f8c;
+    --success: #48bb78;
+    --warning: #ed8936;
+    --danger: #f56565;
+    --info: #4299e1;
+    --light: #f7fafc;
+    --dark: #2d3748;
+    --muted: #a0aec0;
+    --border: #e2e8f0;
+    
+    --glass-bg: rgba(255, 255, 255, 0.85);
+    --glass-border: rgba(255, 255, 255, 0.2);
+    --shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    --shadow-lg: 0 20px 40px -10px rgba(0, 0, 0, 0.15);
+    --radius: 16px;
+    --radius-sm: 10px;
+  }
+
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    color: var(--dark);
+    min-height: 100vh;
+    padding: 20px;
+  }
+
+  .container {
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 0;
+    margin-bottom: 30px;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-icon {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 24px;
+  }
+
+  .logo-text h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--dark);
+    margin-bottom: 4px;
+  }
+
+  .logo-text p {
+    font-size: 0.875rem;
+    color: var(--muted);
+  }
+
+  .header-stats {
+    display: flex;
+    gap: 20px;
+  }
+
+  .stat-item {
+    text-align: center;
+  }
+
+  .stat-number {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary);
+  }
+
+  .stat-label {
+    font-size: 0.75rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  /* 玻璃态卡片 */
+  .glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    border-radius: var(--radius);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    transition: all 0.3s ease;
+  }
+
+  .glass-card:hover {
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+  }
+
+  /* 网格布局 */
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 24px;
+  }
+
+  @media (max-width: 1200px) {
+    .dashboard-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* 表单样式 */
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  .form-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--dark);
+    margin-bottom: 8px;
+  }
+
+  .form-input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 1rem;
+    transition: all 0.2s;
+    background: white;
+  }
+
+  .form-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  /* 按钮样式 */
+  .btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: var(--radius-sm);
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  }
+
+  .btn-secondary {
+    background: white;
+    color: var(--dark);
+    border: 2px solid var(--border);
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--primary);
+    color: var(--primary);
+  }
+
+  .btn-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-top: 8px;
+  }
+
+  /* BMI指示器 */
+  .bmi-indicator {
+    margin: 20px 0;
+    padding: 20px;
+    background: linear-gradient(135deg, #f6f9fc 0%, #edf2f7 100%);
+    border-radius: var(--radius-sm);
+  }
+
+  .bmi-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    text-align: center;
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .bmi-status {
+    text-align: center;
+    font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 999px;
+    display: inline-block;
+    font-size: 0.875rem;
+  }
+
+  .bmi-normal { background: rgba(72, 187, 120, 0.1); color: var(--success); }
+  .bmi-overweight { background: rgba(237, 137, 54, 0.1); color: var(--warning); }
+  .bmi-obese { background: rgba(245, 101, 101, 0.1); color: var(--danger); }
+  .bmi-underweight { background: rgba(66, 153, 225, 0.1); color: var(--info); }
+
+  /* 进度条 */
+  .progress-bar {
+    height: 8px;
+    background: var(--border);
+    border-radius: 4px;
+    margin: 20px 0;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--success), var(--warning), var(--danger));
+    border-radius: 4px;
+    transition: width 0.5s ease;
+  }
+
+  /* 内容区域 */
+  .content-area {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .content-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+
+  @media (max-width: 768px) {
+    .content-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* 膳食建议卡片 */
+  .meal-card {
+    padding: 0;
+  }
+
+  .meal-header {
+    padding: 20px 20px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .meal-list {
+    padding: 20px;
+  }
+
+  .meal-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .meal-item:last-child {
+    border-bottom: none;
+  }
+
+  .meal-name {
+    font-weight: 500;
+  }
+
+  .meal-calories {
+    color: var(--primary);
+    font-weight: 600;
+  }
+
+  /* 图表容器 */
+  .chart-container {
+    padding: 20px;
+    position: relative;
+    height: 300px;
+  }
+
+  /* 表格样式 */
+  .data-table {
+    padding: 20px;
+  }
+
+  .table-container {
+    max-height: 300px;
+    overflow-y: auto;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  th {
+    background: var(--light);
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--muted);
+    position: sticky;
+    top: 0;
+  }
+
+  td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  tr:hover {
+    background: var(--light);
+  }
+
+  /* 状态提示 */
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  .status-online {
+    background: rgba(72, 187, 120, 0.1);
+    color: var(--success);
+  }
+
+  .status-offline {
+    background: rgba(245, 101, 101, 0.1);
+    color: var(--danger);
+  }
+
+  /* 空状态 */
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--muted);
+  }
+
+  .empty-state i {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+  }
+
+  /* 图表按钮组 */
+  .chart-controls {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+  }
+
+  .chart-btn {
+    padding: 8px 16px;
+    border: 1px solid var(--border);
+    background: white;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    color: var(--dark);
+    transition: all 0.2s;
+  }
+
+  .chart-btn:hover {
+    background: var(--light);
+  }
+
+  .chart-btn.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+  }
+
+  /* 响应式调整 */
+  @media (max-width: 768px) {
+    .header {
+      flex-direction: column;
+      gap: 20px;
+    }
+    
+    .header-stats {
+      width: 100%;
+      justify-content: space-around;
+    }
+    
+    .stats-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .form-row {
+      grid-template-columns: 1fr;
+    }
+  }
 </style>
 </head>
 <body>
   <div class="container">
-    <!-- ... 之前的所有HTML结构保持不变 ... -->
+    <!-- 顶部导航 -->
+    <header class="header">
+      <div class="logo">
+        <div class="logo-icon">
+          <i class="fas fa-heartbeat"></i>
+        </div>
+        <div class="logo-text">
+          <h1>健康智膳</h1>
+          <p>个性化健康膳食助手</p>
+        </div>
+      </div>
+      
+      <div class="header-stats">
+        <div class="stat-item">
+          <div class="stat-number" id="totalUsers">0</div>
+          <div class="stat-label">总用户数</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number" id="onlineUsers">0</div>
+          <div class="stat-label">在线用户</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number" id="avgBMI">-</div>
+          <div class="stat-label">平均BMI</div>
+        </div>
+      </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <div class="dashboard-grid">
+      <!-- 左侧：用户信息输入 -->
+      <div class="sidebar">
+        <!-- 用户信息卡片 -->
+        <div class="glass-card user-card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">个人健康档案</h2>
+              <p class="card-subtitle">填写基本信息获取个性化建议</p>
+            </div>
+            <div class="user-avatar">
+              <i class="fas fa-user"></i>
+            </div>
+          </div>
+
+          <form id="healthForm">
+            <div class="form-group">
+              <label class="form-label">姓名</label>
+              <input type="text" id="name" class="form-input" placeholder="请输入您的姓名">
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">年龄</label>
+                <input type="number" id="age" class="form-input" placeholder="岁" min="1" max="120">
+              </div>
+              <div class="form-group">
+                <label class="form-label">性别</label>
+                <select id="gender" class="form-input">
+                  <option value="">请选择</option>
+                  <option value="male">男性</option>
+                  <option value="female">女性</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">身高 (cm)</label>
+                <input type="number" id="height" class="form-input" placeholder="厘米" min="50" max="250" step="0.1">
+              </div>
+              <div class="form-group">
+                <label class="form-label">体重 (kg)</label>
+                <input type="number" id="weight" class="form-input" placeholder="千克" min="20" max="300" step="0.1">
+              </div>
+            </div>
+
+            <!-- BMI 指示器 -->
+            <div class="bmi-indicator" id="bmiDisplay" style="display: none;">
+              <div class="bmi-value" id="bmiValue">-</div>
+              <div id="bmiStatus" class="bmi-status"></div>
+              <div class="progress-bar">
+                <div class="progress-fill" id="bmiProgress" style="width: 0%"></div>
+              </div>
+              <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--muted); margin-top: 4px;">
+                <span>偏瘦 (<18.5)</span>
+                <span>正常 (18.5-24)</span>
+                <span>超重 (24-28)</span>
+                <span>肥胖 (>28)</span>
+              </div>
+            </div>
+
+            <div class="btn-group">
+              <button type="button" id="saveBtn" class="btn btn-primary">
+                <i class="fas fa-save"></i>保存并分析
+              </button>
+              <button type="button" id="clearBtn" class="btn btn-secondary">
+                <i class="fas fa-redo"></i>重新填写
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- 实时统计数据 -->
+        <div class="glass-card">
+          <div class="card-header">
+            <h2 class="card-title">实时统计</h2>
+            <span class="status-badge status-online" id="connectionStatus">
+              <i class="fas fa-circle"></i>已连接
+            </span>
+          </div>
+          <div class="stats-grid" style="padding: 20px;">
+            <div class="stat-card">
+              <div class="stat-icon">
+                <i class="fas fa-chart-line"></i>
+              </div>
+              <div class="stat-number" id="todayUsers">0</div>
+              <div class="stat-label">今日新增</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon">
+                <i class="fas fa-balance-scale"></i>
+              </div>
+              <div class="stat-number" id="normalUsers">0%</div>
+              <div class="stat-label">健康比例</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-icon">
+                <i class="fas fa-running"></i>
+              </div>
+              <div class="stat-number" id="activeUsers">0</div>
+              <div class="stat-label">活跃用户</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 右侧：分析结果 -->
+      <div class="content-area">
+        <!-- 膳食建议 -->
+        <div class="glass-card meal-card">
+          <div class="meal-header">
+            <h2 class="card-title">今日膳食建议</h2>
+            <span class="stat-label" id="dailyCalories">建议总热量: - kcal</span>
+          </div>
+          <div class="meal-list">
+            <div class="empty-state" id="mealPlaceholder">
+              <i class="fas fa-utensils"></i>
+              <p>填写信息获取个性化膳食建议</p>
+            </div>
+            <div id="mealsContainer" style="display: none;">
+              <!-- 膳食建议动态插入 -->
+            </div>
+          </div>
+        </div>
+
+        <!-- 统计图表 -->
+        <div class="glass-card">
+          <div class="card-header">
+            <h2 class="card-title">健康数据统计</h2>
+            <div class="chart-controls">
+              <button class="chart-btn active" onclick="changeChartType('age')" id="btnAgeChart">
+                <i class="fas fa-chart-bar"></i>年龄分布
+              </button>
+              <button class="chart-btn" onclick="changeChartType('bmi')" id="btnBmiChart">
+                <i class="fas fa-chart-pie"></i>BMI分布
+              </button>
+            </div>
+          </div>
+          <div class="chart-container">
+            <canvas id="healthChart"></canvas>
+          </div>
+        </div>
+
+        <!-- 用户数据表格 -->
+        <div class="glass-card data-table">
+          <div class="card-header">
+            <h2 class="card-title">最近用户数据</h2>
+            <input type="text" id="searchInput" class="form-input" placeholder="搜索用户..." style="width: 200px; padding: 8px 12px;">
+          </div>
+          <div class="table-container">
+            <table id="userTable">
+              <thead>
+                <tr>
+                  <th>姓名</th>
+                  <th>年龄</th>
+                  <th>BMI</th>
+                  <th>状态</th>
+                  <th>记录时间</th>
+                </tr>
+              </thead>
+              <tbody id="userTableBody">
+                <tr>
+                  <td colspan="5" class="empty-state">
+                    <i class="fas fa-database"></i>
+                    <p>暂无数据，请添加第一条记录</p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
 <script>
@@ -32,11 +674,48 @@ let currentChartType = 'age';
 
 // ================= DOM 元素 =================
 const elements = {
-  // ... 之前的元素定义保持不变 ...
+  // 表单元素
+  name: document.getElementById('name'),
+  age: document.getElementById('age'),
+  gender: document.getElementById('gender'),
+  height: document.getElementById('height'),
+  weight: document.getElementById('weight'),
+  saveBtn: document.getElementById('saveBtn'),
+  clearBtn: document.getElementById('clearBtn'),
+  
+  // 显示元素
+  bmiDisplay: document.getElementById('bmiDisplay'),
+  bmiValue: document.getElementById('bmiValue'),
+  bmiStatus: document.getElementById('bmiStatus'),
+  bmiProgress: document.getElementById('bmiProgress'),
+  
+  // 统计数据
+  totalUsers: document.getElementById('totalUsers'),
+  onlineUsers: document.getElementById('onlineUsers'),
+  avgBMI: document.getElementById('avgBMI'),
+  todayUsers: document.getElementById('todayUsers'),
+  normalUsers: document.getElementById('normalUsers'),
+  activeUsers: document.getElementById('activeUsers'),
+  connectionStatus: document.getElementById('connectionStatus'),
+  
+  // 膳食建议元素
+  dailyCalories: document.getElementById('dailyCalories'),
+  mealPlaceholder: document.getElementById('mealPlaceholder'),
+  mealsContainer: document.getElementById('mealsContainer'),
+  
+  // 表格元素
+  userTableBody: document.getElementById('userTableBody'),
+  searchInput: document.getElementById('searchInput'),
+  
+  // 图表控制按钮
+  btnAgeChart: document.getElementById('btnAgeChart'),
+  btnBmiChart: document.getElementById('btnBmiChart')
 };
 
 // ================= 初始化 =================
 document.addEventListener('DOMContentLoaded', function() {
+  console.log('应用初始化...');
+  
   // 初始化表单输入监听
   setupFormListeners();
   
@@ -51,244 +730,781 @@ document.addEventListener('DOMContentLoaded', function() {
   // 显示示例数据
   showSampleData();
   
-  // 加载本地存储的数据
-  loadLocalData();
+  // 更新连接状态
+  updateConnectionStatus();
+  
+  console.log('初始化完成');
 });
 
-// ================= 增强的膳食建议功能 =================
-function getDietPlan(age, bmi, gender) {
+// ================= 表单监听 =================
+function setupFormListeners() {
+  console.log('设置表单监听...');
+  const inputs = ['height', 'weight', 'age'];
+  inputs.forEach(id => {
+    const input = document.getElementById(id);
+    if (input) {
+      input.addEventListener('input', calculateBMI);
+    }
+  });
+  console.log('表单监听设置完成');
+}
+
+// ================= BMI计算 =================
+function calculateBMI() {
+  console.log('计算BMI...');
+  const height = parseFloat(elements.height.value);
+  const weight = parseFloat(elements.weight.value);
+  const age = parseInt(elements.age.value);
+  
+  if (height && weight && age) {
+    const bmi = (weight / ((height / 100) ** 2)).toFixed(1);
+    const category = getBMICategory(bmi);
+    
+    console.log(`计算完成: BMI=${bmi}, 分类=${category.text}`);
+    
+    // 更新BMI显示
+    elements.bmiDisplay.style.display = 'block';
+    elements.bmiValue.textContent = bmi;
+    elements.bmiStatus.textContent = category.text;
+    elements.bmiStatus.className = `bmi-status bmi-${category.type}`;
+    
+    // 更新进度条
+    let progressPercent = 0;
+    if (bmi < 18.5) {
+      progressPercent = (bmi / 18.5) * 25; // 偏瘦区间占25%
+    } else if (bmi < 24) {
+      progressPercent = 25 + ((bmi - 18.5) / (24 - 18.5)) * 25; // 正常区间占25%
+    } else if (bmi < 28) {
+      progressPercent = 50 + ((bmi - 24) / (28 - 24)) * 25; // 超重区间占25%
+    } else {
+      progressPercent = 75 + Math.min(((bmi - 28) / 10) * 25, 25); // 肥胖区间占25%
+    }
+    
+    elements.bmiProgress.style.width = `${Math.min(progressPercent, 100)}%`;
+    
+    // 设置进度条颜色
+    if (category.type === 'underweight') {
+      elements.bmiProgress.style.background = 'linear-gradient(90deg, var(--info), var(--primary))';
+    } else if (category.type === 'normal') {
+      elements.bmiProgress.style.background = 'linear-gradient(90deg, var(--success), var(--success-light))';
+    } else if (category.type === 'overweight') {
+      elements.bmiProgress.style.background = 'linear-gradient(90deg, var(--warning), var(--warning-dark))';
+    } else {
+      elements.bmiProgress.style.background = 'linear-gradient(90deg, var(--danger), var(--danger-dark))';
+    }
+  } else {
+    console.log('数据不足，隐藏BMI显示');
+    elements.bmiDisplay.style.display = 'none';
+  }
+}
+
+function getBMICategory(bmi) {
+  bmi = parseFloat(bmi);
+  if (bmi < 18.5) return { type: 'underweight', text: '偏瘦' };
+  if (bmi < 24) return { type: 'normal', text: '正常' };
+  if (bmi < 28) return { type: 'overweight', text: '超重' };
+  return { type: 'obese', text: '肥胖' };
+}
+
+// ================= 数据保存 =================
+async function saveHealthData() {
+  console.log('保存健康数据...');
+  const data = collectFormData();
+  console.log('收集的数据:', data);
+  
+  if (!validateData(data)) {
+    console.log('数据验证失败');
+    return;
+  }
+  
+  // 计算BMI
+  data.bmi = calculateBMINumber(data);
+  data.category = getBMICategory(data.bmi).type;
+  data.timestamp = Date.now();
+  data.id = generateUserId();
+  console.log('处理后数据:', data);
+  
+  // 显示加载状态
+  const originalText = elements.saveBtn.innerHTML;
+  elements.saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 保存中...';
+  elements.saveBtn.disabled = true;
+  
+  try {
+    // 添加到数据列表
+    allUsersData.push(data);
+    console.log('已添加到数据列表，总数:', allUsersData.length);
+    
+    // 更新本地存储
+    saveToLocalStorage(data);
+    console.log('已保存到本地存储');
+    
+    // 更新UI
+    updateUIAfterSave(data);
+    
+    // 显示成功消息
+    showSuccessMessage('数据保存成功！');
+    console.log('UI更新完成');
+    
+  } catch (error) {
+    console.error('保存失败:', error);
+    showErrorMessage('保存失败，请重试');
+  } finally {
+    // 恢复按钮状态
+    elements.saveBtn.innerHTML = originalText;
+    elements.saveBtn.disabled = false;
+  }
+}
+
+function collectFormData() {
+  return {
+    name: elements.name.value.trim(),
+    age: parseInt(elements.age.value) || 0,
+    gender: elements.gender.value,
+    height: parseFloat(elements.height.value) || 0,
+    weight: parseFloat(elements.weight.value) || 0
+  };
+}
+
+function validateData(data) {
+  if (!data.name) {
+    showErrorMessage('请输入姓名');
+    return false;
+  }
+  if (!data.age || data.age < 1 || data.age > 120) {
+    showErrorMessage('请输入有效的年龄（1-120）');
+    return false;
+  }
+  if (!data.height || data.height < 50 || data.height > 250) {
+    showErrorMessage('请输入有效的身高（50-250 cm）');
+    return false;
+  }
+  if (!data.weight || data.weight < 20 || data.weight > 300) {
+    showErrorMessage('请输入有效的体重（20-300 kg）');
+    return false;
+  }
+  return true;
+}
+
+function calculateBMINumber(data) {
+  return (data.weight / ((data.height / 100) ** 2)).toFixed(1);
+}
+
+function generateUserId() {
+  return 'user_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+}
+
+// ================= 消息提示 =================
+function showSuccessMessage(message) {
+  const toast = document.createElement('div');
+  toast.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 12px 24px;
+    background: var(--success);
+    color: white;
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow);
+    z-index: 1000;
+    animation: slideIn 0.3s ease;
+  `;
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  
+  setTimeout(() => {
+    toast.style.animation = 'slideOut 0.3s ease';
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
+
+function showErrorMessage(message) {
+  const toast = document.createElement('div');
+  toast.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 12px 24px;
+    background: var(--danger);
+    color: white;
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow);
+    z-index: 1000;
+    animation: slideIn 0.3s ease;
+  `;
+  toast.textContent = message;
+  document.body.appendChild(toast);
+  
+  setTimeout(() => {
+    toast.style.animation = 'slideOut 0.3s ease';
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
+}
+
+// 添加动画CSS
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+  @keyframes slideOut {
+    from { transform: translateX(0); opacity: 1; }
+    to { transform: translateX(100%); opacity: 0; }
+  }
+`;
+document.head.appendChild(style);
+
+// ================= 图表功能 =================
+function initHealthChart() {
+  console.log('初始化图表...');
+  const ctx = document.getElementById('healthChart');
+  if (!ctx) {
+    console.error('图表画布未找到');
+    return;
+  }
+  
+  try {
+    // 创建图表
+    healthChart = new Chart(ctx.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: ['青少年(<18)', '青年(18-30)', '中年(31-45)', '中老年(46-60)', '老年(60+)'],
+        datasets: [{
+          label: '用户数量',
+          data: [0, 0, 0, 0, 0],
+          backgroundColor: [
+            'rgba(102, 126, 234, 0.6)',
+            'rgba(72, 187, 120, 0.6)',
+            'rgba(237, 137, 54, 0.6)',
+            'rgba(66, 153, 225, 0.6)',
+            'rgba(210, 82, 140, 0.6)'
+          ],
+          borderColor: [
+            'rgb(102, 126, 234)',
+            'rgb(72, 187, 120)',
+            'rgb(237, 137, 54)',
+            'rgb(66, 153, 225)',
+            'rgb(210, 82, 140)'
+          ],
+          borderWidth: 1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: true,
+            position: 'top',
+            labels: {
+              color: 'var(--dark)',
+              font: {
+                size: 12
+              }
+            }
+          },
+          tooltip: {
+            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+            titleColor: 'white',
+            bodyColor: 'white',
+            padding: 12,
+            cornerRadius: 6
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: {
+              color: 'rgba(0, 0, 0, 0.05)'
+            },
+            ticks: {
+              color: 'var(--muted)',
+              callback: function(value) {
+                return Number.isInteger(value) ? value : '';
+              }
+            }
+          },
+          x: {
+            grid: {
+              display: false
+            },
+            ticks: {
+              color: 'var(--dark)',
+              maxRotation: 45
+            }
+          }
+        }
+      }
+    });
+    
+    console.log('图表初始化成功');
+    
+  } catch (error) {
+    console.error('图表初始化失败:', error);
+  }
+}
+
+function changeChartType(type) {
+  console.log('切换图表类型:', type);
+  currentChartType = type;
+  
+  // 更新按钮状态
+  if (elements.btnAgeChart) elements.btnAgeChart.classList.toggle('active', type === 'age');
+  if (elements.btnBmiChart) elements.btnBmiChart.classList.toggle('active', type === 'bmi');
+  
+  if (type === 'age') {
+    updateAgeDistributionChart();
+  } else {
+    updateBMIDistributionChart();
+  }
+}
+
+function updateChart() {
+  if (currentChartType === 'age') {
+    updateAgeDistributionChart();
+  } else {
+    updateBMIDistributionChart();
+  }
+}
+
+function updateAgeDistributionChart() {
+  console.log('更新年龄分布图表...');
+  if (!healthChart) return;
+  
+  const ageGroups = {
+    '青少年(<18)': 0,
+    '青年(18-30)': 0,
+    '中年(31-45)': 0,
+    '中老年(46-60)': 0,
+    '老年(60+)': 0
+  };
+  
+  allUsersData.forEach(user => {
+    const group = getAgeGroup(user.age);
+    ageGroups[group] = (ageGroups[group] || 0) + 1;
+  });
+  
+  // 如果没有数据，显示示例数据
+  const hasData = allUsersData.length > 0;
+  const labels = Object.keys(ageGroups);
+  const data = hasData ? Object.values(ageGroups) : [5, 8, 3, 2, 1];
+  const labelText = hasData ? '用户数量' : '示例数据';
+  
+  healthChart.data.labels = labels;
+  healthChart.data.datasets[0].data = data;
+  healthChart.data.datasets[0].label = labelText;
+  healthChart.config.type = 'bar';
+  
+  healthChart.options.plugins.title = {
+    display: true,
+    text: hasData ? '用户年龄分布' : '年龄分布（示例）',
+    color: 'var(--dark)',
+    font: {
+      size: 16,
+      weight: 'bold'
+    }
+  };
+  
+  healthChart.update();
+  console.log('年龄分布图表更新完成');
+}
+
+function updateBMIDistributionChart() {
+  console.log('更新BMI分布图表...');
+  if (!healthChart) return;
+  
+  const bmiCategories = {
+    '偏瘦(<18.5)': 0,
+    '正常(18.5-24)': 0,
+    '超重(24-28)': 0,
+    '肥胖(>28)': 0
+  };
+  
+  allUsersData.forEach(user => {
+    if (user.bmi) {
+      const bmi = parseFloat(user.bmi);
+      if (bmi < 18.5) bmiCategories['偏瘦(<18.5)']++;
+      else if (bmi < 24) bmiCategories['正常(18.5-24)']++;
+      else if (bmi < 28) bmiCategories['超重(24-28)']++;
+      else bmiCategories['肥胖(>28)']++;
+    }
+  });
+  
+  // 如果没有数据，显示示例数据
+  const hasData = allUsersData.length > 0;
+  const labels = Object.keys(bmiCategories);
+  const data = hasData ? Object.values(bmiCategories) : [2, 8, 4, 1];
+  const labelText = hasData ? 'BMI分布' : 'BMI分布（示例）';
+  
+  healthChart.data.labels = labels;
+  healthChart.data.datasets[0].data = data;
+  healthChart.data.datasets[0].label = labelText;
+  healthChart.config.type = 'pie';
+  healthChart.data.datasets[0].backgroundColor = [
+    'rgba(66, 153, 225, 0.6)',  // 偏瘦
+    'rgba(72, 187, 120, 0.6)',  // 正常
+    'rgba(237, 137, 54, 0.6)',  // 超重
+    'rgba(245, 101, 101, 0.6)'  // 肥胖
+  ];
+  
+  healthChart.options.plugins.title = {
+    display: true,
+    text: hasData ? 'BMI分布统计' : 'BMI分布（示例）',
+    color: 'var(--dark)',
+    font: {
+      size: 16,
+      weight: 'bold'
+    }
+  };
+  
+  healthChart.update();
+  console.log('BMI分布图表更新完成');
+}
+
+function getAgeGroup(age) {
+  if (age < 18) return '青少年(<18)';
+  if (age <= 30) return '青年(18-30)';
+  if (age <= 45) return '中年(31-45)';
+  if (age <= 60) return '中老年(46-60)';
+  return '老年(60+)';
+}
+
+// ================= 表格功能 =================
+function filterUsers() {
+  const searchTerm = elements.searchInput.value.toLowerCase();
+  const rows = elements.userTableBody.querySelectorAll('tr');
+  
+  rows.forEach(row => {
+    if (row.classList && row.classList.contains('empty-state')) return;
+    
+    const text = row.textContent.toLowerCase();
+    row.style.display = searchTerm === '' || text.includes(searchTerm) ? '' : 'none';
+  });
+}
+
+// ================= 增强的膳食建议 =================
+function updateUIAfterSave(data) {
+  console.log('更新UI，数据:', data);
+  
+  // 更新膳食建议
+  showEnhancedDietAdvice(data);
+  
+  // 更新用户数据列表
+  addUserToTable(data);
+  
+  // 更新统计数据
+  updateStatistics();
+  
+  // 更新图表
+  updateChart();
+  
+  // 计算BMI
+  const bmi = data.bmi || calculateBMINumber(data);
+  const category = getBMICategory(bmi);
+  elements.bmiDisplay.style.display = 'block';
+  elements.bmiValue.textContent = bmi;
+  elements.bmiStatus.textContent = category.text;
+  elements.bmiStatus.className = `bmi-status bmi-${category.type}`;
+  
+  // 更新进度条
+  let progressPercent = 0;
+  if (bmi < 18.5) {
+    progressPercent = (bmi / 18.5) * 25;
+  } else if (bmi < 24) {
+    progressPercent = 25 + ((bmi - 18.5) / (24 - 18.5)) * 25;
+  } else if (bmi < 28) {
+    progressPercent = 50 + ((bmi - 24) / (28 - 24)) * 25;
+  } else {
+    progressPercent = 75 + Math.min(((bmi - 28) / 10) * 25, 25);
+  }
+  elements.bmiProgress.style.width = `${Math.min(progressPercent, 100)}%`;
+  
+  console.log('UI更新完成');
+}
+
+function showEnhancedDietAdvice(data) {
+  const age = data.age || 30;
+  const bmi = data.bmi || 22;
+  const gender = data.gender || 'male';
+  const height = data.height || 170;
+  const weight = data.weight || 65;
+  
+  const dietPlan = getDietPlan(age, bmi, gender, height, weight);
   const ageGroup = getAgeGroup(age);
   const bmiCategory = getBMICategory(bmi).type;
-  const genderFactor = gender === 'female' ? 0.9 : 1.0; // 女性基础代谢较低
   
-  // 计算基础代谢率 (BMR)
-  const bmr = calculateBMR(age, gender, bmi, genderFactor);
+  console.log('生成膳食建议:', { ageGroup, bmiCategory, dietPlan });
+  
+  // 更新总热量显示
+  elements.dailyCalories.textContent = `建议总热量: ${dietPlan.dailyCalories} kcal`;
+  
+  // 生成HTML
+  let html = `
+    <div style="margin-bottom: 20px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h3 style="font-size: 1.1rem; color: var(--primary);">${ageGroup} 个性化膳食计划</h3>
+        <div style="font-size: 0.9rem; color: var(--muted);">
+          <div>BMR: <strong>${dietPlan.bmr}</strong> kcal</div>
+          <div>TDEE: <strong>${dietPlan.tdee}</strong> kcal</div>
+        </div>
+      </div>
+      
+      <div style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(210, 82, 140, 0.1)); padding: 16px; border-radius: 12px; margin-bottom: 20px;">
+        <h4 style="color: var(--primary); margin-bottom: 12px;">🍽️ 餐次分配</h4>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; text-align: center;">
+          <div>
+            <div style="font-size: 1.2rem; font-weight: 600; color: var(--primary);">早餐</div>
+            <div style="font-size: 0.9rem; color: var(--muted);">${dietPlan.mealPlan.breakfast.totalCalories} kcal</div>
+          </div>
+          <div>
+            <div style="font-size: 1.2rem; font-weight: 600; color: var(--success);">午餐</div>
+            <div style="font-size: 0.9rem; color: var(--muted);">${dietPlan.mealPlan.lunch.totalCalories} kcal</div>
+          </div>
+          <div>
+            <div style="font-size: 1.2rem; font-weight: 600; color: var(--warning);">晚餐</div>
+            <div style="font-size: 0.9rem; color: var(--muted);">${dietPlan.mealPlan.dinner.totalCalories} kcal</div>
+          </div>
+          <div>
+            <div style="font-size: 1.2rem; font-weight: 600; color: var(--info);">加餐</div>
+            <div style="font-size: 0.9rem; color: var(--muted);">${dietPlan.mealPlan.snacks.totalCalories} kcal</div>
+          </div>
+        </div>
+      </div>
+  `;
+  
+  // 早餐建议
+  html += `
+    <div style="margin-bottom: 20px; padding: 16px; border: 1px solid rgba(0,0,0,0.1); border-radius: 12px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <h4 style="font-size: 1.1rem; color: var(--primary);">🌅 早餐建议</h4>
+        <span style="background: linear-gradient(135deg, var(--primary), var(--primary-dark)); color: white; padding: 4px 12px; border-radius: 999px; font-size: 0.9rem;">
+          ${dietPlan.mealPlan.breakfast.totalCalories} kcal
+        </span>
+      </div>
+  `;
+  
+  dietPlan.mealPlan.breakfast.foods.forEach(food => {
+    html += `
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed var(--border);">
+        <div>
+          <div style="font-weight: 500;">${food.name}</div>
+          <div style="font-size: 0.85rem; color: var(--muted);">${food.note}</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-weight: 600; color: var(--primary);">${food.calories} kcal</div>
+          <div style="font-size: 0.8rem; color: var(--muted);">${food.nutrition}</div>
+        </div>
+      </div>
+    `;
+  });
+  
+  html += '</div>';
+  
+  // 营养目标
+  html += `
+    <div style="margin-bottom: 20px; padding: 16px; border: 1px solid rgba(0,0,0,0.1); border-radius: 12px;">
+      <h4 style="font-size: 1.1rem; color: var(--primary); margin-bottom: 12px;">🎯 营养目标</h4>
+      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+  `;
+  
+  const nutritionGoals = dietPlan.nutritionGoals || {};
+  Object.entries(nutritionGoals).forEach(([key, goal]) => {
+    html += `
+      <div style="padding: 8px; border-radius: 8px; background: rgba(0,0,0,0.02);">
+        <div style="font-weight: 500; font-size: 0.9rem;">${getNutritionName(key)}</div>
+        <div style="font-size: 0.8rem; color: var(--muted);">${goal.min} - ${goal.max} ${goal.unit}</div>
+      </div>
+    `;
+  });
+  
+  html += `
+      </div>
+    </div>
+  `;
+  
+  elements.mealPlaceholder.style.display = 'none';
+  elements.mealsContainer.style.display = 'block';
+  elements.mealsContainer.innerHTML = html;
+}
+
+function getNutritionName(key) {
+  const names = {
+    protein: '蛋白质',
+    carbs: '碳水化合物',
+    fat: '脂肪',
+    fiber: '膳食纤维',
+    water: '水分',
+    calcium: '钙质',
+    iron: '铁质',
+    vitaminD: '维生素D',
+    zinc: '锌'
+  };
+  return names[key] || key;
+}
+
+function getDietPlan(age, bmi, gender, height, weight) {
+  const ageGroup = getAgeGroup(age);
+  const bmiNum = parseFloat(bmi);
+  const bmiCategory = getBMICategory(bmi).type;
+  const genderFactor = gender === 'female' ? 0.9 : 1.0;
+  
+  // 计算基础代谢率 (BMR) 使用Mifflin-St Jeor公式
+  let bmr = 0;
+  if (gender === 'male') {
+    bmr = 10 * weight + 6.25 * height - 5 * age + 5;
+  } else {
+    bmr = 10 * weight + 6.25 * height - 5 * age - 161;
+  }
+  bmr = Math.round(bmr);
   
   // 计算每日总能量消耗 (TDEE)
-  const tdee = calculateTDEE(bmr, bmiCategory, ageGroup);
+  let activityFactor = 1.375; // 轻度活动
   
-  // 根据年龄、BMI、性别生成个性化膳食计划
+  // 根据BMI调整
+  if (bmiCategory === 'obese' || bmiCategory === 'overweight') {
+    activityFactor = 1.2; // 低活动
+  } else if (bmiCategory === 'underweight') {
+    activityFactor = 1.55; // 中度活动
+  }
+  
+  // 根据年龄调整
+  if (ageGroup === '青少年(<18)') {
+    activityFactor = 1.7; // 青少年活动量更大
+  } else if (ageGroup === '老年(60+)') {
+    activityFactor = 1.2; // 老年人活动量较小
+  }
+  
+  const tdee = Math.round(bmr * activityFactor);
+  
+  // 根据BMI调整目标热量
+  let targetCalories = tdee;
+  if (bmiCategory === 'obese' || bmiCategory === 'overweight') {
+    targetCalories = Math.round(tdee * 0.85); // 减重
+  } else if (bmiCategory === 'underweight') {
+    targetCalories = Math.round(tdee * 1.15); // 增重
+  }
+  
+  // 餐次分配
+  const mealDistribution = getMealDistribution(ageGroup, bmiCategory);
+  const breakfastCal = Math.round(targetCalories * mealDistribution.breakfast);
+  const lunchCal = Math.round(targetCalories * mealDistribution.lunch);
+  const dinnerCal = Math.round(targetCalories * mealDistribution.dinner);
+  const snacksCal = Math.round(targetCalories * mealDistribution.snacks);
+  
   return {
-    dailyCalories: Math.round(tdee),
-    bmr: Math.round(bmr),
-    tdee: Math.round(tdee),
-    mealPlan: generatePersonalizedMealPlan(ageGroup, bmiCategory, tdee, gender),
+    dailyCalories: targetCalories,
+    bmr: bmr,
+    tdee: tdee,
+    mealPlan: {
+      breakfast: generateMeal('breakfast', ageGroup, bmiCategory, breakfastCal, gender),
+      lunch: generateMeal('lunch', ageGroup, bmiCategory, lunchCal, gender),
+      dinner: generateMeal('dinner', ageGroup, bmiCategory, dinnerCal, gender),
+      snacks: generateSnacks(ageGroup, bmiCategory, snacksCal, gender)
+    },
     nutritionGoals: getNutritionGoals(ageGroup, bmiCategory, gender),
     specialRecommendations: getSpecialRecommendations(ageGroup, bmiCategory, gender)
   };
 }
 
-function calculateBMR(age, gender, bmi, genderFactor) {
-  // 使用Mifflin-St Jeor公式计算基础代谢率
-  let bmr = 0;
-  if (gender === 'male') {
-    bmr = 10 * 70 + 6.25 * 170 - 5 * age + 5; // 使用70kg, 170cm作为参考
-  } else {
-    bmr = 10 * 60 + 6.25 * 160 - 5 * age - 161; // 使用60kg, 160cm作为参考
-  }
-  
-  // 根据BMI调整
-  if (bmi < 18.5) bmr *= 1.1; // 偏瘦需要更多能量
-  else if (bmi > 28) bmr *= 0.9; // 肥胖需要减少能量
-  
-  return bmr * genderFactor;
-}
-
-function calculateTDEE(bmr, bmiCategory, ageGroup) {
-  // 基础活动系数
-  let activityFactor = 1.375; // 轻度活动
-  
-  // 根据BMI调整
-  if (bmiCategory === 'obese') activityFactor = 1.2; // 肥胖者建议减少活动强度
-  else if (bmiCategory === 'overweight') activityFactor = 1.55; // 超重者建议增加活动
-  
-  // 根据年龄调整
-  if (ageGroup === '青少年(<18)') activityFactor = 1.7; // 青少年活动量更大
-  else if (ageGroup === '老年(60+)') activityFactor = 1.2; // 老年人活动量较小
-  
-  return bmr * activityFactor;
-}
-
-function generatePersonalizedMealPlan(ageGroup, bmiCategory, tdee, gender) {
-  const totalCalories = Math.round(tdee);
-  const mealDistribution = getMealDistribution(ageGroup, bmiCategory);
-  
-  return {
-    breakfast: generateMeal('breakfast', ageGroup, bmiCategory, totalCalories * mealDistribution.breakfast, gender),
-    lunch: generateMeal('lunch', ageGroup, bmiCategory, totalCalories * mealDistribution.lunch, gender),
-    dinner: generateMeal('dinner', ageGroup, bmiCategory, totalCalories * mealDistribution.dinner, gender),
-    snacks: generateSnacks(ageGroup, bmiCategory, totalCalories * mealDistribution.snacks, gender)
-  };
-}
-
 function getMealDistribution(ageGroup, bmiCategory) {
-  // 不同人群的餐次能量分配
-  const distributions = {
-    '青少年(<18)': { breakfast: 0.25, lunch: 0.35, dinner: 0.30, snacks: 0.10 },
-    '青年(18-30)': { breakfast: 0.30, lunch: 0.40, dinner: 0.25, snacks: 0.05 },
-    '中年(31-45)': { breakfast: 0.30, lunch: 0.35, dinner: 0.30, snacks: 0.05 },
-    '中老年(46-60)': { breakfast: 0.25, lunch: 0.35, dinner: 0.35, snacks: 0.05 },
-    '老年(60+)': { breakfast: 0.30, lunch: 0.35, dinner: 0.30, snacks: 0.05 }
-  };
-  
-  // 根据BMI调整
-  if (bmiCategory === 'underweight') {
-    // 偏瘦者增加零食比例
-    return { breakfast: 0.25, lunch: 0.35, dinner: 0.30, snacks: 0.10 };
-  } else if (bmiCategory === 'obese' || bmiCategory === 'overweight') {
-    // 超重/肥胖者减少晚餐比例
-    return { breakfast: 0.30, lunch: 0.40, dinner: 0.25, snacks: 0.05 };
+  if (bmiCategory === 'obese' || bmiCategory === 'overweight') {
+    return { breakfast: 0.3, lunch: 0.4, dinner: 0.25, snacks: 0.05 }; // 晚餐较少
+  } else if (bmiCategory === 'underweight') {
+    return { breakfast: 0.25, lunch: 0.35, dinner: 0.3, snacks: 0.1 }; // 增加加餐
+  } else if (ageGroup === '青少年(<18)') {
+    return { breakfast: 0.25, lunch: 0.4, dinner: 0.3, snacks: 0.05 }; // 午餐多
+  } else if (ageGroup === '老年(60+)') {
+    return { breakfast: 0.3, lunch: 0.35, dinner: 0.3, snacks: 0.05 }; // 均分
+  } else {
+    return { breakfast: 0.3, lunch: 0.4, dinner: 0.25, snacks: 0.05 }; // 标准
   }
-  
-  return distributions[ageGroup] || distributions['青年(18-30)'];
 }
 
 function generateMeal(mealType, ageGroup, bmiCategory, calories, gender) {
-  const mealCalories = Math.round(calories);
+  const mealCalories = calories;
   const foods = getFoodOptions(mealType, ageGroup, bmiCategory, gender);
   
   // 智能选择食物组合
   const selectedFoods = [];
   let remainingCalories = mealCalories;
-  let proteinTarget = mealCalories * 0.25 / 4; // 25%蛋白质
-  let carbTarget = mealCalories * 0.50 / 4;   // 50%碳水
-  let fatTarget = mealCalories * 0.25 / 9;    // 25%脂肪
+  let targetFoodCount = 3; // 每餐建议3种食物
   
-  // 优先选择蛋白质食物
-  const proteinFoods = foods.filter(f => f.category === 'protein');
-  if (proteinFoods.length > 0) {
-    const food = getBestFood(proteinFoods, remainingCalories * 0.3);
-    if (food) {
-      selectedFoods.push(food);
-      remainingCalories -= food.calories;
-      proteinTarget -= food.protein || 0;
-    }
-  }
-  
-  // 选择主食
-  const carbFoods = foods.filter(f => f.category === 'carb');
-  if (carbFoods.length > 0) {
-    const food = getBestFood(carbFoods, remainingCalories * 0.4);
-    if (food) {
-      selectedFoods.push(food);
-      remainingCalories -= food.calories;
-      carbTarget -= food.carbs || 0;
-    }
-  }
-  
-  // 选择蔬菜水果
-  const veggieFoods = foods.filter(f => f.category === 'veggie');
-  if (veggieFoods.length > 0) {
-    const food = getBestFood(veggieFoods, remainingCalories * 0.2);
-    if (food) {
-      selectedFoods.push(food);
-      remainingCalories -= food.calories;
-    }
-  }
-  
-  // 如果需要，添加额外食物
-  if (remainingCalories > 100) {
-    const extraFoods = foods.filter(f => f.calories <= remainingCalories);
-    if (extraFoods.length > 0) {
-      const food = getBestFood(extraFoods, remainingCalories);
-      if (food) {
-        selectedFoods.push(food);
-        remainingCalories -= food.calories;
-      }
-    }
+  // 根据热量分配选择食物
+  for (let i = 0; i < targetFoodCount && remainingCalories > 100 && foods.length > 0; i++) {
+    const availableFoods = foods.filter(f => f.calories <= remainingCalories);
+    if (availableFoods.length === 0) break;
+    
+    // 根据优先级选择食物
+    const food = availableFoods.sort((a, b) => (b.priority || 0) - (a.priority || 0))[0];
+    selectedFoods.push(food);
+    remainingCalories -= food.calories;
+    
+    // 从备选列表中移除已选食物
+    const index = foods.indexOf(food);
+    if (index > -1) foods.splice(index, 1);
   }
   
   return {
     totalCalories: mealCalories - remainingCalories,
-    foods: selectedFoods,
-    nutritionTips: getMealTips(mealType, ageGroup, bmiCategory, gender)
+    foods: selectedFoods
   };
 }
 
 function getFoodOptions(mealType, ageGroup, bmiCategory, gender) {
-  // 扩展的食物数据库
-  const foodDatabase = {
+  const foods = {
     breakfast: [
-      { name: '燕麦粥（1碗）', calories: 150, category: 'carb', protein: 5, carbs: 27, fat: 3, fiber: 4, note: '高纤维，缓慢释放能量' },
-      { name: '全麦面包（2片）', calories: 160, category: 'carb', protein: 8, carbs: 30, fat: 2, fiber: 6, note: '富含B族维生素' },
-      { name: '煮鸡蛋（2个）', calories: 140, category: 'protein', protein: 12, carbs: 1, fat: 10, fiber: 0, note: '优质蛋白质' },
-      { name: '牛奶（250ml）', calories: 150, category: 'protein', protein: 8, carbs: 12, fat: 8, fiber: 0, note: '钙质丰富' },
-      { name: '希腊酸奶（150g）', calories: 100, category: 'protein', protein: 10, carbs: 6, fat: 3, fiber: 0, note: '高蛋白低脂' },
-      { name: '香蕉（1根）', calories: 105, category: 'carb', protein: 1, carbs: 27, fat: 0, fiber: 3, note: '快速能量补充' },
-      { name: '坚果（30g）', calories: 180, category: 'fat', protein: 6, carbs: 6, fat: 16, fiber: 3, note: '健康脂肪' }
+      { name: '燕麦牛奶粥 + 坚果', calories: 350, nutrition: 'P:12g C:45g F:8g', note: '高纤维与健康脂肪', priority: 5 },
+      { name: '全麦面包+鸡蛋+牛奶', calories: 320, nutrition: 'P:20g C:40g F:10g', note: '优质蛋白+复合碳水', priority: 4 },
+      { name: '蔬菜鸡蛋饼+豆浆', calories: 280, nutrition: 'P:15g C:20g F:12g', note: '高蛋白低GI', priority: 4 },
+      { name: '玉米+鸡胸肉+蔬菜汁', calories: 300, nutrition: 'P:25g C:35g F:8g', note: '健身推荐', priority: 3 }
     ],
     lunch: [
-      { name: '糙米饭（1碗）', calories: 216, category: 'carb', protein: 5, carbs: 45, fat: 2, fiber: 4, note: '富含膳食纤维' },
-      { name: '鸡胸肉（150g）', calories: 195, category: 'protein', protein: 44, carbs: 0, fat: 2, fiber: 0, note: '优质蛋白质' },
-      { name: '三文鱼（150g）', calories: 312, category: 'protein', protein: 34, carbs: 0, fat: 20, fiber: 0, note: 'Omega-3脂肪酸' },
-      { name: '蔬菜沙拉（大盘）', calories: 80, category: 'veggie', protein: 3, carbs: 12, fat: 0, fiber: 5, note: '维生素丰富' },
-      { name: '豆腐（150g）', calories: 120, category: 'protein', protein: 12, carbs: 4, fat: 7, fiber: 2, note: '植物蛋白' },
-      { name: '清蒸鱼（150g）', calories: 180, category: 'protein', protein: 33, carbs: 0, fat: 5, fiber: 0, note: '易消化蛋白' }
+      { name: '杂粮饭+清蒸鱼+西兰花', calories: 450, nutrition: 'P:30g C:50g F:12g', note: '低脂高蛋白', priority: 5 },
+      { name: '糙米饭+牛肉+炒蔬菜', calories: 480, nutrition: 'P:35g C:55g F:15g', note: '增肌推荐', priority: 4 },
+      { name: '荞麦面+鸡胸肉+蔬菜沙拉', calories: 420, nutrition: 'P:28g C:45g F:10g', note: '低GI高纤维', priority: 4 },
+      { name: '全麦三明治+沙拉', calories: 380, nutrition: 'P:20g C:40g F:12g', note: '便携快速', priority: 3 }
     ],
     dinner: [
-      { name: '藜麦饭（1碗）', calories: 220, category: 'carb', protein: 8, carbs: 39, fat: 4, fiber: 5, note: '完全蛋白质' },
-      { name: '瘦牛肉（150g）', calories: 250, category: 'protein', protein: 36, carbs: 0, fat: 10, fiber: 0, note: '铁质丰富' },
-      { name: '蒸蔬菜（混合）', calories: 60, category: 'veggie', protein: 3, carbs: 10, fat: 0, fiber: 6, note: '低热量高纤维' },
-      { name: '蘑菇汤（1碗）', calories: 70, category: 'veggie', protein: 4, carbs: 8, fat: 3, fiber: 2, note: '增强免疫力' },
-      { name: '烤鸡腿（1个）', calories: 180, category: 'protein', protein: 28, carbs: 0, fat: 7, fiber: 0, note: '优质蛋白' }
+      { name: '蒸红薯+三文鱼+青菜', calories: 350, nutrition: 'P:25g C:30g F:10g', note: '优质脂肪', priority: 5 },
+      { name: '豆腐汤+少量米饭+蔬菜', calories: 320, nutrition: 'P:18g C:35g F:8g', note: '清淡易消化', priority: 4 },
+      { name: '鸡胸肉沙拉+全麦面包', calories: 300, nutrition: 'P:25g C:25g F:8g', note: '高蛋白低脂', priority: 4 },
+      { name: '蔬菜炖菜+少量粗粮', calories: 280, nutrition: 'P:15g C:30g F:6g', note: '高纤维', priority: 3 }
     ]
   };
   
-  // 根据条件筛选食物
-  let foods = [...foodDatabase[mealType] || []];
+  let options = foods[mealType] || [];
   
-  // 根据BMI调整
+  // 根据年龄和BMI过滤
   if (bmiCategory === 'obese' || bmiCategory === 'overweight') {
-    foods = foods.filter(f => f.calories < 200 || f.category === 'veggie');
+    options = options.filter(f => f.calories < 400);
   } else if (bmiCategory === 'underweight') {
-    foods = foods.filter(f => f.calories > 100 && f.category !== 'veggie');
+    options = options.filter(f => f.calories > 300);
   }
   
-  // 根据年龄段调整
   if (ageGroup === '青少年(<18)') {
-    foods = foods.filter(f => f.note.includes('蛋白') || f.note.includes('钙') || f.note.includes('纤维'));
+    options = options.filter(f => f.note.includes('高蛋白') || f.note.includes('优质蛋白'));
   } else if (ageGroup === '老年(60+)') {
-    foods = foods.filter(f => f.calories < 300 && (f.note.includes('易消化') || f.note.includes('蛋白')));
+    options = options.filter(f => f.note.includes('易消化') || f.note.includes('清淡'));
   }
   
-  // 根据性别调整
   if (gender === 'female') {
-    // 女性可能需要更多铁质
-    foods = foods.map(f => {
-      if (f.note.includes('铁')) f.priority = 1;
-      return f;
-    });
+    options = options.map(f => ({ ...f, priority: f.priority + 1 })); // 女性提高优先级
   }
   
-  return foods;
-}
-
-function getBestFood(foods, maxCalories) {
-  const suitableFoods = foods.filter(f => f.calories <= maxCalories);
-  if (suitableFoods.length === 0) return null;
-  
-  // 按蛋白质含量和纤维含量排序
-  return suitableFoods.sort((a, b) => {
-    const scoreA = (a.protein || 0) + (a.fiber || 0);
-    const scoreB = (b.protein || 0) + (b.fiber || 0);
-    return scoreB - scoreA;
-  })[0];
+  return options;
 }
 
 function generateSnacks(ageGroup, bmiCategory, calories, gender) {
-  const snackCalories = Math.round(calories);
+  const snackCalories = calories;
   const snacks = [
-    { name: '苹果（中等）', calories: 95, note: '富含纤维和维生素C' },
-    { name: '核桃（3个）', calories: 100, note: 'Omega-3脂肪酸，有益心脏' },
-    { name: '酸奶（100g）', calories: 60, note: '益生菌，助消化' },
-    { name: '全麦饼干（2片）', calories: 70, note: '缓慢释放能量' },
-    { name: '煮鸡蛋（1个）', calories: 70, note: '优质蛋白质' },
-    { name: '胡萝卜条（1小碗）', calories: 50, note: '富含β-胡萝卜素' },
-    { name: '杏仁（10颗）', calories: 70, note: '维生素E，抗氧化' }
+    { name: '苹果（中等）', calories: 95, nutrition: 'C:25g F:0g', note: '富含纤维和维生素C' },
+    { name: '核桃（3个）', calories: 100, nutrition: 'P:4g F:10g', note: 'Omega-3脂肪酸' },
+    { name: '酸奶（100g）', calories: 60, nutrition: 'P:5g C:3g F:3g', note: '益生菌，助消化' },
+    { name: '全麦饼干（2片）', calories: 70, nutrition: 'C:12g F:2g', note: '缓慢释放能量' },
+    { name: '煮鸡蛋（1个）', calories: 70, nutrition: 'P:6g F:5g', note: '优质蛋白质' }
   ];
   
-  // 根据条件筛选零食
-  let filteredSnacks = [...snacks];
+  let filteredSnacks = snacks.filter(s => s.calories <= snackCalories);
   
   if (bmiCategory === 'obese' || bmiCategory === 'overweight') {
     filteredSnacks = filteredSnacks.filter(s => s.calories < 80);
@@ -297,32 +1513,18 @@ function generateSnacks(ageGroup, bmiCategory, calories, gender) {
   }
   
   if (ageGroup === '青少年(<18)') {
-    filteredSnacks = filteredSnacks.filter(s => s.note.includes('蛋白') || s.note.includes('维生素'));
+    filteredSnacks = filteredSnacks.filter(s => s.note.includes('蛋白质') || s.note.includes('维生素'));
   } else if (ageGroup === '老年(60+)') {
-    filteredSnacks = filteredSnacks.filter(s => s.note.includes('易消化') || s.note.includes('心脏'));
+    filteredSnacks = filteredSnacks.filter(s => s.note.includes('易消化'));
   }
   
-  // 选择2-3种零食
-  const selectedSnacks = [];
-  let remainingCalories = snackCalories;
-  
-  while (remainingCalories > 50 && filteredSnacks.length > 0 && selectedSnacks.length < 3) {
-    const suitableSnacks = filteredSnacks.filter(s => s.calories <= remainingCalories);
-    if (suitableSnacks.length === 0) break;
-    
-    const snack = suitableSnacks[Math.floor(Math.random() * suitableSnacks.length)];
-    selectedSnacks.push(snack);
-    remainingCalories -= snack.calories;
-    
-    // 移除已选零食
-    const index = filteredSnacks.indexOf(snack);
-    if (index > -1) filteredSnacks.splice(index, 1);
+  if (filteredSnacks.length === 0 && snackCalories > 0) {
+    filteredSnacks = snacks.slice(0, 2);
   }
   
   return {
-    totalCalories: snackCalories - remainingCalories,
-    snacks: selectedSnacks,
-    tips: getSnackTips(ageGroup, bmiCategory)
+    totalCalories: snackCalories,
+    foods: filteredSnacks
   };
 }
 
@@ -335,29 +1537,24 @@ function getNutritionGoals(ageGroup, bmiCategory, gender) {
     water: { min: 1500, max: 3000, unit: 'ml/天' }
   };
   
-  // 根据BMI调整
   if (bmiCategory === 'obese' || bmiCategory === 'overweight') {
     goals.protein.max = 1.5; // 增加蛋白质
-    goals.carbs.max = 3;    // 减少碳水
+    goals.carbs.max = 3;     // 减少碳水
     goals.fat.max = 1.0;     // 控制脂肪
   } else if (bmiCategory === 'underweight') {
-    goals.protein.min = 1.2;
-    goals.carbs.max = 6;    // 增加碳水
-    goals.fat.max = 1.5;    // 增加健康脂肪
+    goals.protein.min = 1.2; // 增肌
+    goals.carbs.max = 6;     // 增加碳水
+    goals.fat.max = 1.5;     // 增加健康脂肪
   }
   
-  // 根据年龄段调整
   if (ageGroup === '青少年(<18)') {
     goals.protein.max = 1.5;  // 生长发育需要
     goals.calcium = { min: 1000, max: 1300, unit: 'mg/天' };
-    goals.iron = { min: 8, max: 15, unit: 'mg/天' };
   } else if (ageGroup === '老年(60+)') {
     goals.protein.min = 1.0;  // 防止肌肉流失
     goals.calcium = { min: 1200, max: 1500, unit: 'mg/天' };
-    goals.vitaminD = { min: 800, max: 2000, unit: 'IU/天' };
   }
   
-  // 根据性别调整
   if (gender === 'female') {
     goals.iron = { min: 18, max: 20, unit: 'mg/天' };
   } else if (gender === 'male') {
@@ -370,18 +1567,13 @@ function getNutritionGoals(ageGroup, bmiCategory, gender) {
 function getSpecialRecommendations(ageGroup, bmiCategory, gender) {
   const recommendations = [];
   
-  // 基于BMI的建议
   if (bmiCategory === 'obese') {
     recommendations.push({
       icon: 'fas fa-weight',
       title: '减重目标',
       description: '建议每周减重0.5-1kg，循序渐进',
       priority: 'high',
-      tips: [
-        '控制每日热量赤字500-750大卡',
-        '增加有氧运动至每周300分钟',
-        '记录饮食日记，提高自我监控'
-      ]
+      tips: ['控制每日热量赤字500-750大卡', '增加有氧运动至每周300分钟', '记录饮食日记']
     });
   } else if (bmiCategory === 'overweight') {
     recommendations.push({
@@ -389,11 +1581,7 @@ function getSpecialRecommendations(ageGroup, bmiCategory, gender) {
       title: '体重控制',
       description: '保持健康体重，防止继续增加',
       priority: 'medium',
-      tips: [
-        '每周监测体重变化',
-        '增加蔬菜摄入至每日500g',
-        '减少精制糖和加工食品'
-      ]
+      tips: ['每周监测体重变化', '增加蔬菜摄入至每日500g', '减少精制糖']
     });
   } else if (bmiCategory === 'underweight') {
     recommendations.push({
@@ -401,38 +1589,17 @@ function getSpecialRecommendations(ageGroup, bmiCategory, gender) {
       title: '营养增加',
       description: '适当增加热量和蛋白质摄入',
       priority: 'high',
-      tips: [
-        '增加健康零食，如坚果、酸奶',
-        '少量多餐，每日5-6餐',
-        '增加优质蛋白质摄入'
-      ]
+      tips: ['增加健康零食，如坚果、酸奶', '少量多餐，每日5-6餐', '增加优质蛋白质摄入']
     });
   }
   
-  // 基于年龄段的建议
   if (ageGroup === '青少年(<18)') {
     recommendations.push({
       icon: 'fas fa-baby',
       title: '生长发育',
       description: '关键时期，注重全面营养',
       priority: 'high',
-      tips: [
-        '保证每日钙质1000-1300mg',
-        '优质蛋白质每日1.5g/kg体重',
-        '充足睡眠8-10小时'
-      ]
-    });
-  } else if (ageGroup === '中年(31-45)') {
-    recommendations.push({
-      icon: 'fas fa-heartbeat',
-      title: '代谢管理',
-      description: '预防代谢综合征',
-      priority: 'medium',
-      tips: [
-        '定期监测血压、血糖、血脂',
-        '控制腰围<90cm(男)/85cm(女)',
-        '增加膳食纤维摄入'
-      ]
+      tips: ['保证每日钙质1000-1300mg', '优质蛋白质每日1.5g/kg体重', '充足睡眠8-10小时']
     });
   } else if (ageGroup === '老年(60+)') {
     recommendations.push({
@@ -440,97 +1607,23 @@ function getSpecialRecommendations(ageGroup, bmiCategory, gender) {
       title: '骨骼健康',
       description: '预防骨质疏松和肌肉流失',
       priority: 'high',
-      tips: [
-        '补充维生素D 800-2000IU/天',
-        '蛋白质每日1.0-1.2g/kg体重',
-        '适当力量训练预防肌少症'
-      ]
+      tips: ['补充维生素D 800-2000IU/天', '蛋白质每日1.0-1.2g/kg体重', '适当力量训练']
     });
   }
   
-  // 基于性别的建议
   if (gender === 'female') {
     recommendations.push({
       icon: 'fas fa-venus',
       title: '女性健康',
       description: '特别关注铁质和钙质',
       priority: 'medium',
-      tips: [
-        '月经期额外补充铁质',
-        '每日钙质摄入1000-1200mg',
-        '注意叶酸摄入（备孕）'
-      ]
-    });
-  } else if (gender === 'male') {
-    recommendations.push({
-      icon: 'fas fa-mars',
-      title: '男性健康',
-      description: '关注心脏和前列腺健康',
-      priority: 'medium',
-      tips: [
-        '控制红肉摄入，增加鱼类',
-        '增加番茄、西兰花摄入',
-        '限制酒精摄入'
-      ]
+      tips: ['月经期额外补充铁质', '每日钙质摄入1000-1200mg', '注意叶酸摄入（备孕）']
     });
   }
   
   return recommendations;
 }
 
-function getMealTips(mealType, ageGroup, bmiCategory, gender) {
-  const tips = [];
-  
-  if (mealType === 'breakfast') {
-    tips.push('早餐应在起床后1小时内食用');
-    tips.push('保证蛋白质摄入，延缓饥饿感');
-    
-    if (bmiCategory === 'obese' || bmiCategory === 'overweight') {
-      tips.push('避免高糖早餐，选择高纤维食物');
-    }
-    if (ageGroup === '青少年(<18)') {
-      tips.push('青少年需要充足能量，早餐要丰盛');
-    }
-  } else if (mealType === 'lunch') {
-    tips.push('午餐应包含蛋白质、碳水、蔬菜');
-    tips.push('午餐后适当活动，帮助消化');
-    
-    if (bmiCategory === 'underweight') {
-      tips.push('可适当增加主食和蛋白质摄入');
-    }
-  } else if (mealType === 'dinner') {
-    tips.push('晚餐宜清淡，控制在睡前3小时完成');
-    tips.push('减少主食，增加蔬菜比例');
-    
-    if (ageGroup === '老年(60+)') {
-      tips.push('晚餐宜少量，减轻肠胃负担');
-    }
-  }
-  
-  return tips;
-}
-
-function getSnackTips(ageGroup, bmiCategory) {
-  const tips = [];
-  
-  if (bmiCategory === 'obese' || bmiCategory === 'overweight') {
-    tips.push('选择低热量、高纤维的零食');
-    tips.push('控制份量，避免无意识进食');
-  } else if (bmiCategory === 'underweight') {
-    tips.push('选择营养密度高的健康零食');
-    tips.push('可在两餐之间加餐');
-  }
-  
-  if (ageGroup === '青少年(<18)') {
-    tips.push('课间可补充水果、酸奶等');
-  } else if (ageGroup === '老年(60+)') {
-    tips.push('选择易消化、软质的零食');
-  }
-  
-  return tips;
-}
-
-// ================= 增强的同龄人分析 =================
 function getPeerHealthAnalysis(ageGroup, bmiCategory, allUsers) {
   const peerUsers = allUsers.filter(user => {
     const userAgeGroup = getAgeGroup(user.age);
@@ -550,9 +1643,7 @@ function getPeerHealthAnalysis(ageGroup, bmiCategory, allUsers) {
     peerCount: peerUsers.length,
     stats: stats,
     commonIssues: commonIssues,
-    recommendations: recommendations,
-    successStories: getSuccessStories(peerUsers, bmiCategory),
-    warningSigns: getWarningSigns(stats, ageGroup)
+    recommendations: recommendations
   };
 }
 
@@ -560,27 +1651,25 @@ function calculatePeerStats(peerUsers) {
   const bmis = peerUsers.map(u => parseFloat(u.bmi) || 0).filter(b => b > 0);
   const ages = peerUsers.map(u => parseInt(u.age) || 0).filter(a => a > 0);
   
-  if (bmis.length === 0) return {};
+  if (bmis.length === 0) {
+    return {
+      avgBMI: '暂无数据',
+      maxBMI: '暂无数据',
+      minBMI: '暂无数据',
+      bmiDistribution: null,
+      totalUsers: peerUsers.length
+    };
+  }
   
   const avgBMI = (bmis.reduce((a, b) => a + b, 0) / bmis.length).toFixed(1);
   const maxBMI = Math.max(...bmis).toFixed(1);
   const minBMI = Math.min(...bmis).toFixed(1);
   
-  // BMI分布
   const bmiDistribution = {
-    underweight: bmis.filter(b => b < 18.5).length,
-    normal: bmis.filter(b => b >= 18.5 && b < 24).length,
-    overweight: bmis.filter(b => b >= 24 && b < 28).length,
-    obese: bmis.filter(b => b >= 28).length
-  };
-  
-  // 年龄段分布
-  const ageDistribution = {
-    teen: ages.filter(a => a < 18).length,
-    young: ages.filter(a => a >= 18 && a <= 30).length,
-    middle: ages.filter(a => a > 30 && a <= 45).length,
-    senior: ages.filter(a => a > 45 && a <= 60).length,
-    elderly: ages.filter(a => a > 60).length
+    'underweight': bmis.filter(b => b < 18.5).length,
+    'normal': bmis.filter(b => b >= 18.5 && b < 24).length,
+    'overweight': bmis.filter(b => b >= 24 && b < 28).length,
+    'obese': bmis.filter(b => b >= 28).length
   };
   
   return {
@@ -588,9 +1677,7 @@ function calculatePeerStats(peerUsers) {
     maxBMI,
     minBMI,
     bmiDistribution,
-    ageDistribution,
-    totalUsers: peerUsers.length,
-    avgAge: ages.length > 0 ? Math.round(ages.reduce((a, b) => a + b, 0) / ages.length) : 0
+    totalUsers: peerUsers.length
   };
 }
 
@@ -598,36 +1685,29 @@ function analyzeCommonIssues(peerUsers, currentBMICategory) {
   const issues = [];
   const stats = calculatePeerStats(peerUsers);
   
-  // 分析常见问题
-  if (stats.bmiDistribution.overweight + stats.bmiDistribution.obese > stats.totalUsers * 0.4) {
-    issues.push({
-      type: 'weight',
-      severity: 'high',
-      title: '普遍超重问题',
-      description: `${Math.round((stats.bmiDistribution.overweight + stats.bmiDistribution.obese) / stats.totalUsers * 100)}%的同龄人存在超重或肥胖问题`,
-      suggestions: ['增加有氧运动', '控制碳水化合物摄入', '减少加工食品']
-    });
-  }
-  
-  if (stats.avgBMI < 20 && currentBMICategory !== 'underweight') {
-    issues.push({
-      type: 'underweight',
-      severity: 'medium',
-      title: '体重偏低现象',
-      description: '同龄人平均BMI偏低，需要注意营养摄入',
-      suggestions: ['增加优质蛋白质', '少量多餐', '适当增加健康脂肪']
-    });
-  }
-  
-  // 根据当前BMI给出建议
-  if (currentBMICategory === 'obese' && stats.bmiDistribution.normal > stats.totalUsers * 0.5) {
-    issues.push({
-      type: 'improvement',
-      severity: 'info',
-      title: '改善空间较大',
-      description: '超过一半的同龄人BMI正常，有成功经验可借鉴',
-      suggestions: ['学习健康饮食模式', '咨询营养师制定计划', '加入减重小组互助']
-    });
+  if (stats.bmiDistribution) {
+    const total = peerUsers.length;
+    const overweightCount = stats.bmiDistribution.overweight + stats.bmiDistribution.obese;
+    
+    if (overweightCount > total * 0.4) {
+      issues.push({
+        type: 'weight',
+        severity: 'high',
+        title: '普遍超重问题',
+        description: `${Math.round((overweightCount / total) * 100)}%的同龄人存在超重或肥胖问题`,
+        suggestions: ['增加有氧运动', '控制碳水化合物摄入', '减少加工食品']
+      });
+    }
+    
+    if (stats.avgBMI < 20 && currentBMICategory !== 'underweight') {
+      issues.push({
+        type: 'underweight',
+        severity: 'medium',
+        title: '体重偏低现象',
+        description: '同龄人平均BMI偏低，需要注意营养摄入',
+        suggestions: ['增加优质蛋白质', '少量多餐', '适当增加健康脂肪']
+      });
+    }
   }
   
   return issues;
@@ -636,7 +1716,6 @@ function analyzeCommonIssues(peerUsers, currentBMICategory) {
 function generatePeerRecommendations(stats, commonIssues, ageGroup, bmiCategory) {
   const recommendations = [];
   
-  // 基于统计数据的建议
   if (stats.avgBMI && stats.avgBMI > 24) {
     recommendations.push({
       category: 'weight',
@@ -654,7 +1733,6 @@ function generatePeerRecommendations(stats, commonIssues, ageGroup, bmiCategory)
     });
   }
   
-  // 基于常见问题的建议
   commonIssues.forEach(issue => {
     if (issue.severity === 'high') {
       recommendations.push({
@@ -669,265 +1747,10 @@ function generatePeerRecommendations(stats, commonIssues, ageGroup, bmiCategory)
     }
   });
   
-  // 基于年龄段的建议
-  const ageRecommendations = getAgeSpecificRecommendations(ageGroup, bmiCategory);
-  recommendations.push(...ageRecommendations);
-  
-  // 基于BMI的建议
-  const bmiRecommendations = getBMIRecommendations(bmiCategory, stats);
-  recommendations.push(...bmiRecommendations);
-  
   return recommendations;
-}
-
-function getAgeSpecificRecommendations(ageGroup, bmiCategory) {
-  const recommendations = [];
-  
-  switch(ageGroup) {
-    case '青少年(<18)':
-      recommendations.push({
-        category: 'growth',
-        priority: 'high',
-        title: '生长发育支持',
-        description: '青春期是关键发育期，需要充足营养',
-        details: [
-          '每日保证500ml牛奶或同等钙质',
-          '优质蛋白摄入1.2-1.6g/kg体重',
-          '铁质补充，特别是青春期女性',
-          '维生素D补充，促进钙吸收',
-          '充足睡眠8-10小时/天'
-        ],
-        successRate: '90%',
-        timeFrame: '持续整个青春期'
-      });
-      break;
-      
-    case '青年(18-30)':
-      recommendations.push({
-        category: 'habit',
-        priority: 'medium',
-        title: '建立健康习惯',
-        description: '青年期是建立终身健康习惯的关键期',
-        details: [
-          '规律三餐，避免长期外卖',
-          '每周3-5次运动，保持活力',
-          '控制酒精摄入，避免烟酒',
-          '建立规律作息，保证睡眠',
-          '学习营养知识，科学饮食'
-        ],
-        successRate: '80%',
-        timeFrame: '21天形成习惯'
-      });
-      break;
-      
-    case '中年(31-45)':
-      recommendations.push({
-        category: 'metabolism',
-        priority: 'high',
-        title: '代谢管理',
-        description: '新陈代谢开始下降，需要调整饮食结构',
-        details: [
-          '控制热量摄入，防止中年发福',
-          '增加蛋白质比例，维持肌肉量',
-          '减少精制碳水，增加全谷物',
-          '定期体检，监测三高指标',
-          '压力管理，避免情绪性进食'
-        ],
-        successRate: '75%',
-        timeFrame: '3个月调整期'
-      });
-      break;
-      
-    case '中老年(46-60)':
-      recommendations.push({
-        category: 'prevention',
-        priority: 'high',
-        title: '慢病预防',
-        description: '预防慢性疾病的关键时期',
-        details: [
-          '低盐低脂饮食，控制血压血脂',
-          '增加膳食纤维，预防便秘',
-          '补充钙质和维生素D',
-          '适当力量训练，预防肌少症',
-          '定期体检，早期发现问题'
-        ],
-        successRate: '85%',
-        timeFrame: '长期坚持'
-      });
-      break;
-      
-    case '老年(60+)':
-      recommendations.push({
-        category: 'aging',
-        priority: 'high',
-        title: '健康老龄化',
-        description: '维持功能，提高生活质量',
-        details: [
-          '优质蛋白摄入，防止肌肉流失',
-          '易消化食物，少量多餐',
-          '充足水分，预防脱水',
-          '适当活动，维持关节灵活性',
-          '社交活动，心理健康重要'
-        ],
-        successRate: '80%',
-        timeFrame: '持续改善'
-      });
-      break;
-  }
-  
-  return recommendations;
-}
-
-function getBMIRecommendations(bmiCategory, stats) {
-  const recommendations = [];
-  
-  switch(bmiCategory) {
-    case 'underweight':
-      recommendations.push({
-        category: 'weight_gain',
-        priority: 'high',
-        title: '健康增重计划',
-        description: '科学增加体重，改善营养状况',
-        details: [
-          '每日增加300-500大卡热量',
-          '增加优质蛋白摄入（1.2-1.5g/kg）',
-          '选择健康脂肪，如坚果、牛油果',
-          '力量训练促进肌肉增长',
-          '记录体重变化，每周增加0.5kg'
-        ],
-        successRate: '70%',
-        timeFrame: '3个月增重目标'
-      });
-      break;
-      
-    case 'normal':
-      recommendations.push({
-        category: 'maintenance',
-        priority: 'medium',
-        title: '体重维持策略',
-        description: '保持健康体重，预防反弹',
-        details: [
-          '均衡饮食，控制总热量',
-          '定期监测体重，及时调整',
-          '保持运动习惯，每周150分钟',
-          '注意饮食质量，而非数量',
-          '应对压力，避免情绪进食'
-        ],
-        successRate: '85%',
-        timeFrame: '长期维持'
-      });
-      break;
-      
-    case 'overweight':
-      recommendations.push({
-        category: 'weight_loss',
-        priority: 'high',
-        title: '科学减重方案',
-        description: '安全有效地减轻体重',
-        details: [
-          '每日热量赤字500大卡',
-          '控制碳水，增加蛋白质比例',
-          '有氧+力量训练结合',
-          '充足睡眠，减少压力',
-          '寻求专业指导，避免极端节食'
-        ],
-        successRate: '75%',
-        timeFrame: '每周减重0.5-1kg'
-      });
-      break;
-      
-    case 'obese':
-      recommendations.push({
-        category: 'medical',
-        priority: 'high',
-        title: '医学减重建议',
-        description: '肥胖需要医学干预和长期管理',
-        details: [
-          '咨询医生或营养师制定个性化方案',
-          '可能需要医学监测下的低热量饮食',
-          '结合药物治疗（如有必要）',
-          '心理支持，应对饮食情绪',
-          '支持小组，长期行为改变'
-        ],
-        successRate: '60%',
-        timeFrame: '6-12个月减重目标'
-      });
-      break;
-  }
-  
-  return recommendations;
-}
-
-function getSuccessStories(peerUsers, currentBMICategory) {
-  const successUsers = peerUsers.filter(user => {
-    const userCategory = getBMICategory(parseFloat(user.bmi)).type;
-    return userCategory === 'normal' || (currentBMICategory !== 'normal' && userCategory === 'normal');
-  }).slice(0, 3); // 最多取3个成功案例
-  
-  return successUsers.map(user => ({
-    name: user.name || '匿名用户',
-    age: user.age,
-    bmi: user.bmi,
-    duration: '3-6个月',
-    strategy: getSuccessStrategy(user),
-    result: getSuccessResult(user)
-  }));
-}
-
-function getSuccessStrategy(user) {
-  const strategies = [
-    '采用地中海饮食模式，增加橄榄油和鱼类摄入',
-    '坚持每日步行10000步，配合每周3次力量训练',
-    '采用间歇性断食，控制进食时间窗口',
-    '记录饮食日记，提高自我监控意识',
-    '加入线上健康社群，互相监督鼓励'
-  ];
-  return strategies[Math.floor(Math.random() * strategies.length)];
-}
-
-function getSuccessResult(user) {
-  const bmi = parseFloat(user.bmi);
-  if (bmi < 24) return '成功维持健康体重';
-  if (bmi < 28) return '成功减重5-10kg，BMI恢复正常';
-  return '成功减重10kg以上，健康状况显著改善';
-}
-
-function getWarningSigns(stats, ageGroup) {
-  const warnings = [];
-  
-  if (stats.avgBMI > 26) {
-    warnings.push({
-      type: 'high_bmi',
-      level: 'high',
-      message: `同龄人平均BMI ${stats.avgBMI}，超过健康范围`,
-      action: '建议进行健康检查和生活方式调整'
-    });
-  }
-  
-  if (stats.bmiDistribution.obese > stats.totalUsers * 0.3) {
-    warnings.push({
-      type: 'obesity_rate',
-      level: 'high',
-      message: `${Math.round(stats.bmiDistribution.obese / stats.totalUsers * 100)}%的同龄人属于肥胖`,
-      action: '需要群体性健康干预'
-    });
-  }
-  
-  // 年龄段特定警告
-  if (ageGroup === '中年(31-45)' && stats.avgBMI > 24) {
-    warnings.push({
-      type: 'middle_age_weight',
-      level: 'medium',
-      message: '中年发福现象明显，需特别关注',
-      action: '加强代谢管理，防止继续增重'
-    });
-  }
-  
-  return warnings;
 }
 
 function getDefaultPeerAnalysis(ageGroup, bmiCategory) {
-  // 当没有同龄人数据时，返回默认分析
   return {
     peerCount: 0,
     stats: {
@@ -935,408 +1758,128 @@ function getDefaultPeerAnalysis(ageGroup, bmiCategory) {
       totalUsers: 0
     },
     commonIssues: [],
-    recommendations: getAgeSpecificRecommendations(ageGroup, bmiCategory),
-    successStories: [],
-    warningSigns: []
+    recommendations: getAgeSpecificRecommendations(ageGroup, bmiCategory)
   };
 }
 
-// ================= UI更新函数 =================
-function showEnhancedDietAdvice(data) {
-  const dietPlan = getDietPlan(data.age, data.bmi, data.gender);
-  const ageGroup = getAgeGroup(data.age);
-  const bmiCategory = getBMICategory(data.bmi).type;
+function getAgeSpecificRecommendations(ageGroup, bmiCategory) {
+  const recommendations = [];
   
-  // 更新总热量显示
-  elements.dailyCalories.textContent = `建议总热量: ${dietPlan.dailyCalories} kcal`;
-  
-  // 生成详细的膳食建议HTML
-  let html = `
-    <div style="margin-bottom: 20px;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-        <h3 style="font-size: 1.1rem; color: var(--primary);">个性化膳食计划</h3>
-        <div style="font-size: 0.9rem; color: var(--muted);">
-          <div>BMR: <strong>${dietPlan.bmr}</strong> kcal</div>
-          <div>TDEE: <strong>${dietPlan.tdee}</strong> kcal</div>
-        </div>
-      </div>
-      
-      <div style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(210, 82, 140, 0.1)); padding: 16px; border-radius: 12px; margin-bottom: 20px;">
-        <h4 style="color: var(--primary); margin-bottom: 12px;">🍽️ 餐次分配</h4>
-        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; text-align: center;">
-          <div>
-            <div style="font-size: 1.2rem; font-weight: 600; color: var(--primary);">早餐</div>
-            <div style="font-size: 0.9rem; color: var(--muted);">${Math.round(dietPlan.mealPlan.breakfast.totalCalories)} kcal</div>
-          </div>
-          <div>
-            <div style="font-size: 1.2rem; font-weight: 600; color: var(--success);">午餐</div>
-            <div style="font-size: 0.9rem; color: var(--muted);">${Math.round(dietPlan.mealPlan.lunch.totalCalories)} kcal</div>
-          </div>
-          <div>
-            <div style="font-size: 1.2rem; font-weight: 600; color: var(--warning);">晚餐</div>
-            <div style="font-size: 0.9rem; color: var(--muted);">${Math.round(dietPlan.mealPlan.dinner.totalCalories)} kcal</div>
-          </div>
-          <div>
-            <div style="font-size: 1.2rem; font-weight: 600; color: var(--info);">加餐</div>
-            <div style="font-size: 0.9rem; color: var(--muted);">${Math.round(dietPlan.mealPlan.snacks.totalCalories)} kcal</div>
-          </div>
-        </div>
-      </div>
-  `;
-  
-  // 早餐建议
-  html += `
-    <div style="margin-bottom: 20px; padding: 16px; border: 1px solid rgba(0,0,0,0.1); border-radius: 12px;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-        <h4 style="font-size: 1.1rem; color: var(--primary);">🌅 早餐建议</h4>
-        <span style="background: linear-gradient(135deg, var(--primary), var(--primary-light)); color: white; padding: 4px 12px; border-radius: 999px; font-size: 0.9rem;">
-          ${dietPlan.mealPlan.breakfast.totalCalories} kcal
-        </span>
-      </div>
-  `;
-  
-  dietPlan.mealPlan.breakfast.foods.forEach(food => {
-    html += `
-      <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px dashed var(--border);">
-        <div>
-          <div style="font-weight: 500;">${food.name}</div>
-          <div style="font-size: 0.85rem; color: var(--muted);">${food.note}</div>
-        </div>
-        <div style="text-align: right;">
-          <div style="font-weight: 600; color: var(--primary);">${food.calories} kcal</div>
-          <div style="font-size: 0.8rem; color: var(--muted);">P:${food.protein || 0}g | C:${food.carbs || 0}g | F:${food.fat || 0}g</div>
-        </div>
-      </div>
-    `;
-  });
-  
-  if (dietPlan.mealPlan.breakfast.tips && dietPlan.mealPlan.breakfast.tips.length > 0) {
-    html += `
-      <div style="margin-top: 12px; padding: 12px; background: rgba(72, 187, 120, 0.1); border-radius: 8px;">
-        <div style="font-size: 0.9rem; color: var(--success); font-weight: 500; margin-bottom: 4px;">💡 建议：</div>
-        <ul style="margin: 0; padding-left: 20px; font-size: 0.85rem; color: var(--dark);">
-          ${dietPlan.mealPlan.breakfast.tips.map(tip => `<li>${tip}</li>`).join('')}
-        </ul>
-      </div>
-    `;
-  }
-  
-  html += '</div>';
-  
-  // 营养目标
-  html += `
-    <div style="margin-bottom: 20px; padding: 16px; border: 1px solid rgba(0,0,0,0.1); border-radius: 12px;">
-      <h4 style="font-size: 1.1rem; color: var(--primary); margin-bottom: 12px;">🎯 营养目标</h4>
-      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
-  `;
-  
-  Object.entries(dietPlan.nutritionGoals).forEach(([key, goal]) => {
-    html += `
-      <div style="padding: 8px; border-radius: 8px; background: rgba(0,0,0,0.02);">
-        <div style="font-weight: 500; font-size: 0.9rem;">${getNutritionName(key)}</div>
-        <div style="font-size: 0.8rem; color: var(--muted);">${goal.min} - ${goal.max} ${goal.unit}</div>
-      </div>
-    `;
-  });
-  
-  html += `
-      </div>
-    </div>
-  `;
-  
-  // 特别建议
-  if (dietPlan.specialRecommendations.length > 0) {
-    html += `
-      <div style="margin-bottom: 20px; padding: 16px; border: 1px solid rgba(0,0,0,0.1); border-radius: 12px;">
-        <h4 style="font-size: 1.1rem; color: var(--primary); margin-bottom: 12px;">💡 特别建议</h4>
-    `;
-    
-    dietPlan.specialRecommendations.forEach(rec => {
-      const priorityColor = rec.priority === 'high' ? 'var(--danger)' : 'var(--warning)';
-      html += `
-        <div style="margin-bottom: 12px; padding: 12px; background: ${rec.priority === 'high' ? 'rgba(245, 101, 101, 0.1)' : 'rgba(237, 137, 54, 0.1)'}; border-radius: 8px;">
-          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-            <i class="${rec.icon}" style="color: ${priorityColor};"></i>
-            <strong style="color: ${priorityColor};">${rec.title}</strong>
-            <span style="margin-left: auto; font-size: 0.8rem; color: var(--muted);">${rec.priority === 'high' ? '高优先级' : '中优先级'}</span>
-          </div>
-          <div style="font-size: 0.9rem; margin-bottom: 8px;">${rec.description}</div>
-          <ul style="margin: 0; padding-left: 20px; font-size: 0.85rem;">
-            ${rec.tips.map(tip => `<li>${tip}</li>`).join('')}
-          </ul>
-        </div>
-      `;
+  if (ageGroup === '青少年(<18)') {
+    recommendations.push({
+      category: 'growth',
+      priority: 'high',
+      title: '生长发育支持',
+      description: '青春期是关键发育期，需要充足营养',
+      details: [
+        '每日保证500ml牛奶或同等钙质',
+        '优质蛋白摄入1.2-1.6g/kg体重',
+        '铁质补充，特别是青春期女性',
+        '维生素D补充，促进钙吸收',
+        '充足睡眠8-10小时/天'
+      ],
+      successRate: '90%',
+      timeFrame: '持续整个青春期'
     });
-    
-    html += '</div>';
+  } else if (ageGroup === '青年(18-30)') {
+    recommendations.push({
+      category: 'habit',
+      priority: 'medium',
+      title: '建立健康习惯',
+      description: '青年期是建立终身健康习惯的关键期',
+      details: [
+        '规律三餐，避免长期外卖',
+        '每周3-5次运动，保持活力',
+        '控制酒精摄入，避免烟酒',
+        '建立规律作息，保证睡眠',
+        '学习营养知识，科学饮食'
+      ],
+      successRate: '80%',
+      timeFrame: '21天形成习惯'
+    });
+  } else if (ageGroup === '中年(31-45)') {
+    recommendations.push({
+      category: 'metabolism',
+      priority: 'high',
+      title: '代谢管理',
+      description: '新陈代谢开始下降，需要调整饮食结构',
+      details: [
+        '控制热量摄入，防止中年发福',
+        '增加蛋白质比例，维持肌肉量',
+        '减少精制碳水，增加全谷物',
+        '定期体检，监测三高指标',
+        '压力管理，避免情绪性进食'
+      ],
+      successRate: '75%',
+      timeFrame: '3个月调整期'
+    });
+  } else if (ageGroup === '中老年(46-60)') {
+    recommendations.push({
+      category: 'prevention',
+      priority: 'high',
+      title: '慢病预防',
+      description: '预防慢性疾病的关键时期',
+      details: [
+        '低盐低脂饮食，控制血压血脂',
+        '增加膳食纤维，预防便秘',
+        '补充钙质和维生素D',
+        '适当力量训练，预防肌少症',
+        '定期体检，早期发现问题'
+      ],
+      successRate: '85%',
+      timeFrame: '长期坚持'
+    });
+  } else if (ageGroup === '老年(60+)') {
+    recommendations.push({
+      category: 'aging',
+      priority: 'high',
+      title: '健康老龄化',
+      description: '维持功能，提高生活质量',
+      details: [
+        '优质蛋白摄入，防止肌肉流失',
+        '易消化食物，少量多餐',
+        '充足水分，预防脱水',
+        '适当活动，维持关节灵活性',
+        '社交活动，心理健康重要'
+      ],
+      successRate: '80%',
+      timeFrame: '持续改善'
+    });
   }
   
-  elements.mealsContainer.innerHTML = html;
-  elements.mealPlaceholder.style.display = 'none';
-  elements.mealsContainer.style.display = 'block';
+  return recommendations;
 }
 
-function getNutritionName(key) {
-  const names = {
-    protein: '蛋白质',
-    carbs: '碳水化合物',
-    fat: '脂肪',
-    fiber: '膳食纤维',
-    water: '水分',
-    calcium: '钙质',
-    iron: '铁质',
-    vitaminD: '维生素D',
-    zinc: '锌'
-  };
-  return names[key] || key;
-}
-
-// ================= 增强的同龄人分析UI =================
-function showEnhancedPeerAnalysis(data) {
-  const ageGroup = getAgeGroup(data.age);
-  const bmiCategory = getBMICategory(data.bmi).type;
-  const analysis = getPeerHealthAnalysis(ageGroup, bmiCategory, allUsersData);
-  
-  let html = `
-    <div style="margin-bottom: 20px; padding: 16px; background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(210, 82, 140, 0.1)); border-radius: 12px;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-        <h3 style="font-size: 1.1rem; color: var(--primary);">👥 ${ageGroup} 健康报告</h3>
-        <span style="background: var(--primary); color: white; padding: 4px 12px; border-radius: 999px; font-size: 0.9rem;">
-          样本: ${analysis.peerCount} 人
-        </span>
-      </div>
-  `;
-  
-  if (analysis.stats.avgBMI !== '暂无数据') {
-    html += `
-      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; text-align: center; margin-bottom: 16px;">
-        <div>
-          <div style="font-size: 1.5rem; font-weight: 600; color: var(--primary);">${analysis.stats.avgBMI}</div>
-          <div style="font-size: 0.8rem; color: var(--muted);">平均BMI</div>
-        </div>
-        <div>
-          <div style="font-size: 1.5rem; font-weight: 600; color: var(--success);">${analysis.stats.minBMI}</div>
-          <div style="font-size: 0.8rem; color: var(--muted);">最低</div>
-        </div>
-        <div>
-          <div style="font-size: 1.5rem; font-weight: 600; color: var(--danger);">${analysis.stats.maxBMI}</div>
-          <div style="font-size: 0.8rem; color: var(--muted);">最高</div>
-        </div>
-      </div>
-    `;
-  }
-  
-  if (analysis.stats.bmiDistribution) {
-    const total = analysis.peerCount;
-    html += `
-      <div style="margin-bottom: 16px;">
-        <div style="font-size: 0.9rem; color: var(--dark); margin-bottom: 8px;">BMI分布</div>
-        <div style="display: flex; height: 20px; border-radius: 10px; overflow: hidden; margin-bottom: 4px;">
-          <div style="width: ${(analysis.stats.bmiDistribution.underweight / total) * 100}%; background: var(--info);"></div>
-          <div style="width: ${(analysis.stats.bmiDistribution.normal / total) * 100}%; background: var(--success);"></div>
-          <div style="width: ${(analysis.stats.bmiDistribution.overweight / total) * 100}%; background: var(--warning);"></div>
-          <div style="width: ${(analysis.stats.bmiDistribution.obese / total) * 100}%; background: var(--danger);"></div>
-        </div>
-        <div style="display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--muted);">
-          <span>偏瘦: ${Math.round((analysis.stats.bmiDistribution.underweight / total) * 100) || 0}%</span>
-          <span>正常: ${Math.round((analysis.stats.bmiDistribution.normal / total) * 100) || 0}%</span>
-          <span>超重: ${Math.round((analysis.stats.bmiDistribution.overweight / total) * 100) || 0}%</span>
-          <span>肥胖: ${Math.round((analysis.stats.bmiDistribution.obese / total) * 100) || 0}%</span>
-        </div>
-      </div>
-    `;
-  }
-  
-  html += '</div>';
-  
-  // 警告信息
-  if (analysis.warningSigns.length > 0) {
-    html += `
-      <div style="margin-bottom: 20px;">
-        <h4 style="font-size: 1rem; color: var(--danger); margin-bottom: 12px;">⚠️ 健康预警</h4>
-    `;
-    
-    analysis.warningSigns.forEach(warning => {
-      const levelColor = warning.level === 'high' ? 'var(--danger)' : 'var(--warning)';
-      html += `
-        <div style="margin-bottom: 12px; padding: 12px; background: rgba(245, 101, 101, 0.1); border-left: 4px solid ${levelColor};">
-          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-            <i class="fas fa-exclamation-triangle" style="color: ${levelColor};"></i>
-            <strong style="color: ${levelColor};">${warning.message}</strong>
-          </div>
-          <div style="font-size: 0.9rem; color: var(--dark);">${warning.action}</div>
-        </div>
-      `;
-    });
-    
-    html += '</div>';
-  }
-  
-  // 详细建议
-  html += `
-    <div style="margin-bottom: 20px;">
-      <h4 style="font-size: 1.1rem; color: var(--primary); margin-bottom: 12px;">📋 针对性建议</h4>
-  `;
-  
-  analysis.recommendations.forEach((rec, index) => {
-    const priorityColor = rec.priority === 'high' ? 'var(--danger)' : 'var(--warning)';
-    const successColor = parseFloat(rec.successRate) > 80 ? 'var(--success)' : 
-                         parseFloat(rec.successRate) > 60 ? 'var(--warning)' : 'var(--danger)';
-    
-    html += `
-      <div style="margin-bottom: 20px; padding: 16px; border: 1px solid var(--border); border-radius: 12px; background: white;">
-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
-          <div style="width: 32px; height: 32px; background: ${priorityColor}; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem;">
-            ${index + 1}
-          </div>
-          <div>
-            <div style="font-size: 1rem; font-weight: 600; color: var(--dark);">${rec.title}</div>
-            <div style="font-size: 0.9rem; color: var(--muted);">${rec.description}</div>
-          </div>
-        </div>
-        
-        <div style="margin: 12px 0; font-size: 0.9rem; color: var(--dark);">
-          ${rec.details.map((detail, i) => 
-            `<div style="margin: 8px 0; padding-left: 8px; border-left: 2px solid var(--primary);">${detail}</div>`
-          ).join('')}
-        </div>
-        
-        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; color: var(--muted);">
-          <div>
-            <i class="fas fa-chart-line"></i>
-            成功率: <strong style="color: ${successColor};">${rec.successRate}</strong>
-          </div>
-          <div>
-            <i class="fas fa-calendar-alt"></i>
-            建议周期: ${rec.timeFrame}
-          </div>
-        </div>
-      </div>
-    `;
-  });
-  
-  html += '</div>';
-  
-  // 成功案例
-  if (analysis.successStories.length > 0) {
-    html += `
-      <div style="margin-bottom: 20px;">
-        <h4 style="font-size: 1.1rem; color: var(--primary); margin-bottom: 12px;">🏆 成功案例参考</h4>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px;">
-    `;
-    
-    analysis.successStories.forEach(story => {
-      html += `
-        <div style="padding: 12px; background: rgba(72, 187, 120, 0.1); border-radius: 8px;">
-          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-            <i class="fas fa-user-check" style="color: var(--success);"></i>
-            <div style="font-weight: 500; color: var(--dark);">${story.name}</div>
-            <span style="font-size: 0.8rem; background: var(--success); color: white; padding: 2px 8px; border-radius: 999px;">BMI:${story.bmi}</span>
-          </div>
-          <div style="font-size: 0.85rem; color: var(--muted); margin-bottom: 4px;">${story.duration} | ${story.age}岁</div>
-          <div style="font-size: 0.85rem; color: var(--dark); margin-bottom: 8px;">${story.strategy}</div>
-          <div style="font-size: 0.8rem; color: var(--success); font-weight: 500;">结果: ${story.result}</div>
-        </div>
-      `;
-    });
-    
-    html += `
-        </div>
-      </div>
-    `;
-  }
-  
-  // 常见问题
-  if (analysis.commonIssues.length > 0) {
-    html += `
-      <div style="margin-bottom: 20px;">
-        <h4 style="font-size: 1.1rem; color: var(--primary); margin-bottom: 12px;">🔍 常见问题与对策</h4>
-    `;
-    
-    analysis.commonIssues.forEach(issue => {
-      html += `
-        <div style="margin-bottom: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 8px;">
-          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
-            <i class="fas fa-exclamation-circle" style="color: ${
-              issue.severity === 'high' ? 'var(--danger)' : 
-              issue.severity === 'medium' ? 'var(--warning)' : 'var(--info)'
-            };"></i>
-            <div style="font-weight: 500; color: var(--dark);">${issue.title}</div>
-            <span style="font-size: 0.7rem; color: white; padding: 2px 8px; border-radius: 999px; background: ${
-              issue.severity === 'high' ? 'var(--danger)' : 
-              issue.severity === 'medium' ? 'var(--warning)' : 'var(--info)'
-            };">
-              ${issue.severity === 'high' ? '高关注' : issue.severity === 'medium' ? '中关注' : '信息'}
-            </span>
-          </div>
-          <div style="font-size: 0.9rem; margin-bottom: 8px;">${issue.description}</div>
-          <div style="font-size: 0.85rem;">
-            <strong>解决方案:</strong>
-            <ul style="margin: 4px 0 0 0; padding-left: 20px; color: var(--dark);">
-              ${issue.suggestions.map(s => `<li>${s}</li>`).join('')}
-            </ul>
-          </div>
-        </div>
-      `;
-    });
-    
-    html += '</div>';
-  }
-  
-  // 行动计划
-  html += `
-    <div style="margin-top: 20px; padding: 20px; background: linear-gradient(135deg, var(--primary), var(--primary-light)); color: white; border-radius: 12px;">
-      <h4 style="margin-bottom: 12px; font-size: 1.1rem;">📅 ${ageGroup} 健康行动计划</h4>
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px;">
-        <div>
-          <div style="font-size: 0.9rem; opacity: 0.9;">第1周</div>
-          <div style="font-weight: 500;">记录饮食与运动</div>
-        </div>
-        <div>
-          <div style="font-size: 0.9rem; opacity: 0.9;">第2-4周</div>
-          <div style="font-weight: 500;">建立健康习惯</div>
-        </div>
-        <div>
-          <div style="font-size: 0.9rem; opacity: 0.9;">第1-3月</div>
-          <div style="font-weight: 500;">巩固与优化</div>
-        </div>
-      </div>
-      <div style="font-size: 0.9rem; opacity: 0.9;">每周检查一次进展，每月评估一次效果，适时调整计划</div>
-    </div>
-  `;
-  
-  // 更新同龄人分析容器
-  const peerContainer = document.getElementById('peerAdviceList');
-  if (peerContainer) {
-    peerContainer.innerHTML = html;
+// ================= 本地存储 =================
+function saveToLocalStorage(data) {
+  try {
+    const stored = JSON.parse(localStorage.getItem('health_data') || '[]');
+    stored.push(data);
+    localStorage.setItem('health_data', JSON.stringify(stored));
+  } catch (error) {
+    console.error('保存到本地存储失败:', error);
   }
 }
 
-// ================= 更新UI函数 =================
-function updateUIAfterSave(data) {
-  // 增强的膳食建议
-  showEnhancedDietAdvice(data);
-  
-  // 增强的同龄人分析
-  showEnhancedPeerAnalysis(data);
-  
-  // 更新用户表格
-  addUserToTable(data);
-  
-  // 更新统计数据
-  updateStatistics();
-  
-  // 更新图表
-  updateChart();
-  
-  // 显示成功消息
-  showSuccessMessage('数据分析完成！已生成个性化健康建议');
+function loadLocalData() {
+  try {
+    const stored = JSON.parse(localStorage.getItem('health_data') || '[]');
+    if (stored.length > 0) {
+      allUsersData = stored;
+      updateStatistics();
+      updateChart();
+      updateUserTable();
+    }
+  } catch (error) {
+    console.error('加载本地数据失败:', error);
+  }
 }
 
-// ================= 主函数调用 =================
-// 确保在页面加载时调用
-// 确保在保存数据时调用
-// 确保在显示示例数据时调用
-</script>
-</body>
-</html>
+// ================= 用户管理 =================
+function addUserToTable(user) {
+  console.log('添加用户到表格:', user);
+  const tableBody = document.getElementById('userTableBody');
+  if (!tableBody) return;
+  
+  // 如果是空的占位符，先清空
+  const emptyRow =
