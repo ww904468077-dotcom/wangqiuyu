@@ -1,162 +1,561 @@
-<!DOCTYPE html>
-<html lang="zh-cn">
+<!doctype html>
+<html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<title>健康BMI分析系统</title>
-<script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.6.0/firebase-database.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>个人化健康膳食助手 — 单文件版</title>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<!-- Firebase (v8 兼容 CDN, 适用于 file:/// 本地打开) -->
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
 <style>
-body{
-    margin:0;background:linear-gradient(135deg,#7733ff,#b566ff);
-    font-family: "Microsoft YaHei";color:#fff;overflow:hidden;
-}
+  :root{
+    --bg1:#6a11cb; --bg2:#2575fc;
+    --card-bg: rgba(255,255,255,0.06);
+    --glass: rgba(255,255,255,0.06);
+    --accent:#efeefe;
+    --muted: rgba(255,255,255,0.8);
+    --radius:14px;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; min-height:100vh;
+    font-family: "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    background: linear-gradient(135deg,var(--bg1),var(--bg2));
+    color: #fff;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+  }
 
-/* 页面容器 — 两屏横向布局 */
-#container{
-    width:200vw;height:100vh;display:flex;
-    transition:0.6s ease;
-}
+  /* Layout */
+  .wrap{ max-width:1200px; margin:28px auto; padding:20px; display:grid; gap:20px;
+         grid-template-columns: 420px 1fr; }
+  @media (max-width:980px){ .wrap{ grid-template-columns: 1fr; padding:12px } }
 
-/* 两个页面卡片布局 */
-.page{
-    width:100vw;height:100vh;display:flex;
-    justify-content:center;align-items:center;
-    padding:20px;box-sizing:border-box;
-}
+  .card{
+    background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));
+    border-radius:var(--radius);
+    padding:18px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    border:1px solid rgba(255,255,255,0.04);
+    transition: transform .18s ease;
+  }
+  .card:hover{ transform: translateY(-6px); }
 
-.card{
-    width:430px;background:rgba(255,255,255,.16);
-    box-shadow:0 0 20px rgba(255,255,255,.3);
-    padding:30px;border-radius:18px;backdrop-filter:blur(10px);
-    animation:fade .8s;
-}
-@keyframes fade{from{opacity:0;transform:translateY(30px)}to{opacity:1;transform:translateY(0)}}
+  h1,h2{ margin:0 0 12px 0; color:var(--accent) }
+  label{ display:block; font-size:0.9rem; color:var(--muted); margin-bottom:6px }
+  input, select { width:100%; padding:10px 12px; border-radius:10px; border:1px solid rgba(255,255,255,0.06); background:transparent; color:var(--accent); margin-bottom:10px; }
+  .row{ display:flex; gap:10px }
+  .row .col{ flex:1 }
 
-h2{margin-bottom:15px;}
-input{
-    width:100%;padding:10px;margin:6px 0;border-radius:10px;
-    border:none;font-size:17px;
-}
-button{
-    width:100%;padding:12px;border:none;margin-top:15px;
-    font-size:18px;color:#fff;background:#4c1fff;
-    border-radius:10px;cursor:pointer;transition:.3s;
-}
-button:hover{background:#2201ff;transform:scale(1.05)}
+  button{
+    padding:10px 14px; border-radius:12px; border:none; cursor:pointer;
+    color:white; font-weight:600;
+    background: linear-gradient(90deg,#a78bfa,#7c3aed);
+    box-shadow: 0 8px 24px rgba(124,58,237,0.28);
+  }
+  button.ghost{ background: rgba(255,255,255,0.05); box-shadow:none; color:var(--muted) }
 
-/* 数据结果文字 */
-#meal,p{font-size:17px;line-height:27px}
+  .small{ font-size:0.9rem; color:var(--muted) }
+  .avatar{ width:64px;height:64px;border-radius:12px;background:linear-gradient(180deg,rgba(255,255,255,0.04),rgba(255,255,255,0.02)); display:flex;align-items:center;justify-content:center;font-size:1.4rem;margin-right:12px; }
 
-/* 第二页滚动内容 */
-#resultBox{width:450px;height:80vh;overflow-y:auto;padding-right:5px;}
-#resultBox::-webkit-scrollbar{width:6px;}
-#resultBox::-webkit-scrollbar-thumb{background:#fff;border-radius:5px;}
+  /* meals grid */
+  .meals{ display:grid; grid-template-columns: repeat(3,1fr); gap:12px }
+  @media (max-width:900px){ .meals{ grid-template-columns: 1fr } }
+  .meal-item{ padding:14px; border-radius:10px; background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); border:1px solid rgba(255,255,255,0.03) }
+
+  table{ width:100%; border-collapse:collapse; margin-top:8px }
+  th,td{ padding:8px; text-align:left; border-bottom:1px dashed rgba(255,255,255,0.04); font-size:0.95rem; color:var(--muted) }
+
+  .bad-grid{ display:grid; grid-template-columns: repeat(2,1fr); gap:10px }
+  @media (max-width:900px){ .bad-grid{ grid-template-columns:1fr } }
+
+  footer{ color: rgba(255,255,255,0.7); font-size:0.85rem; text-align:center; margin-top:10px }
+  .hint{ font-size:0.85rem; color:rgba(255,255,255,0.7); margin-top:8px }
+
+  /* animations */
+  .fade-in{ animation:fadeIn .6s ease both }
+  @keyframes fadeIn{ from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none} }
+
+  /* responsive small UI tweaks */
+  .stat-grid{ display:grid; grid-template-columns: repeat(2,1fr); gap:12px }
+  @media (max-width:900px){ .stat-grid{ grid-template-columns:1fr } }
 </style>
 </head>
 <body>
+  <div class="wrap">
+    <!-- left column: form & summary -->
+    <div class="card fade-in">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div style="display:flex;align-items:center">
+          <div class="avatar">🩺</div>
+          <div>
+            <div style="font-weight:700; font-size:1rem">个人化健康膳食助手</div>
+            <div class="small">输入信息，保存至 Firebase 并生成建议</div>
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div class="small">用户数</div>
+          <div style="font-weight:700; font-size:1.25rem" id="userCount">0</div>
+        </div>
+      </div>
 
-<div id="container">
+      <hr style="border:none;height:12px">
 
-<!-- 页① 用户输入  -->
-<div class="page">
-<div class="card">
-<h2>📝 输入健康信息</h2>
-<input id="name" placeholder="姓名">
-<input id="height" type="number" placeholder="身高 cm">
-<input id="weight" type="number" placeholder="体重 kg">
-<input id="age" type="number" placeholder="年龄">
-<button onclick="saveUser()">生成健康报告</button>
-<p id="msg"></p>
-</div>
-</div>
+      <h2>用户登录 / 注册</h2>
+      <label for="name">姓名</label>
+      <input id="name" placeholder="例如：王小明">
 
-<!-- 页② 结果展示页  -->
-<div class="page">
-<div class="card" id="resultBox">
-<h2 id="titleName">🍽 健康报告</h2>
+      <div class="row">
+        <div class="col">
+          <label for="height">身高 (cm)</label>
+          <input id="height" type="number" min="50" max="250" step="0.1" placeholder="170">
+        </div>
+        <div class="col">
+          <label for="weight">体重 (kg)</label>
+          <input id="weight" type="number" min="20" max="300" step="0.1" placeholder="65">
+        </div>
+      </div>
 
-<h3>📌 推荐三餐</h3><p id="meal"></p><hr>
+      <label for="age">年龄</label>
+      <input id="age" type="number" min="5" max="120" placeholder="30">
 
-<h3>⚠ 常见高热量食物</h3>
-<p>炸鸡(450) 薯条(365) 奶茶(550) 披萨(320)...</p><hr>
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <button id="saveBtn">保存并生成建议 ✨</button>
+        <button id="clearBtn" class="ghost">清空</button>
+      </div>
 
-<h3>🏃 运动消耗参考</h3>
-<p>跑步30分钟=300kcal ｜ 游泳1h=500kcal ｜ 骑行45min=350kcal</p><hr>
+      <div class="hint">保存后会写入 Firebase 实时数据库 (/users)。请检查控制台与数据库规则以确认写入权限。</div>
+    </div>
 
-<h3>📊 群体统计</h3>
-<canvas id="chart" style="width:100%;background:#fff;border-radius:12px;padding:10px"></canvas>
+    <!-- right column: results, meals, charts -->
+    <div style="display:grid; gap:20px;">
+      <div class="card fade-in" id="resultCard">
+        <h2 id="greeting">个性化健康建议</h2>
+        <div id="bmiInfo" class="small">请在左侧填写信息并保存以查看详细建议</div>
 
-<br><button onclick="back()">返回填写</button>
-</div>
-</div>
+        <div style="height:12px"></div>
 
-</div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;">
+          <div style="flex:1; min-width:220px">
+            <div style="font-weight:700">今日三餐建议</div>
+            <div class="meals" id="mealsContainer">
+              <!-- 早餐/午餐/晚餐 卡片注入 -->
+            </div>
+          </div>
 
+          <div style="width:360px; min-width:260px">
+            <div style="font-weight:700">食品热量 & 营养</div>
+            <div id="foodTableWrapper"></div>
+          </div>
+        </div>
+      </div>
 
-<!-- =================== JS =================== -->
+      <div class="card fade-in">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <h2>不健康食品 & 运动建议</h2>
+          <div class="chip" style="background:rgba(255,255,255,0.04);padding:6px 10px;border-radius:999px;font-size:0.9rem;color:var(--muted)">高热量对照</div>
+        </div>
+
+        <div class="bad-grid" id="badList" style="margin-top:12px"></div>
+
+        <div style="height:12px"></div>
+        <div style="display:flex; gap:12px; flex-wrap:wrap;">
+          <div style="flex:1; min-width:240px">
+            <h3 style="margin:0 0 8px 0">运动消耗估算</h3>
+            <table>
+              <thead><tr><th>运动</th><th>估计 kcal/小时</th></tr></thead>
+              <tbody>
+                <tr><td>快走 (5 km/h)</td><td>240 - 320</td></tr>
+                <tr><td>慢跑 (8 km/h)</td><td>550 - 700</td></tr>
+                <tr><td>骑行 (16–20 km/h)</td><td>400 - 600</td></tr>
+                <tr><td>HIIT（高强度）</td><td>600 - 900</td></tr>
+              </tbody>
+            </table>
+
+            <div style="margin-top:8px;">
+              <label for="calInput">想消耗的热量 (kcal)</label>
+              <input id="calInput" type="number" placeholder="例如 500">
+              <div style="display:flex;gap:8px;">
+                <button id="calcTimeBtn">计算运动时间</button>
+                <button id="copyBtn" class="ghost">复制结果</button>
+              </div>
+              <pre id="timeResult" class="small" style="white-space:pre-wrap;margin-top:8px"></pre>
+            </div>
+          </div>
+
+          <div style="flex:1; min-width:240px">
+            <h3 style="margin:0 0 8px 0">按年龄段用户占比</h3>
+            <canvas id="ageChart" height="220" style="background:#fff;border-radius:12px;padding:8px"></canvas>
+            <div class="hint">“正常 / 超重”占比（实时读取数据库 /users）。</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card fade-in">
+        <h2>用户数据（最近 50 条）</h2>
+        <div id="tableWrap" style="max-height:280px; overflow:auto;"></div>
+        <footer>单文件设计 · 紫色渐变 · 卡片式布局</footer>
+      </div>
+    </div>
+  </div>
+
 <script>
-// Firebase Init
+/* ================= Firebase 配置 =================
+   我已把你最新提供的配置放入此处（如需替换请改下面对象）
+*/
 const firebaseConfig = {
-apiKey:"AIzaSyABck4GsHq7x68LUQQ0tqPg9Lj6XoYXi1g",
-authDomain:"project-2607536693074291471.firebaseapp.com",
-databaseURL:"https://project-2607536693074291471-default-rtdb.firebaseio.com",
-projectId:"project-2607536693074291471",
-storageBucket:"project-2607536693074291471.firebasestorage.app",
-messagingSenderId:"841252265184",
-appId:"1:841252265184:web:b5a7db1dd06acbb55ec485",
-measurementId:"G-NPGBYV26TJ"
+  apiKey: "AIzaSyABck4GsHq7x68LUQQ0tqPg9Lj6XoYXi1g",
+  authDomain: "project-2607536693074291471.firebaseapp.com",
+  databaseURL: "https://project-2607536693074291471-default-rtdb.firebaseio.com",
+  projectId: "project-2607536693074291471",
+  storageBucket: "project-2607536693074291471.firebasestorage.app",
+  messagingSenderId: "841252265184",
+  appId: "1:841252265184:web:b5a7db1dd06acbb55ec485",
+  measurementId: "G-NPGBYV26TJ"
 };
 firebase.initializeApp(firebaseConfig);
-const db=firebase.database();
+const db = firebase.database();
 
+/* ================= DOM 元素 ================= */
+const nameInput = document.getElementById('name');
+const heightInput = document.getElementById('height');
+const weightInput = document.getElementById('weight');
+const ageInput = document.getElementById('age');
+const saveBtn = document.getElementById('saveBtn');
+const clearBtn = document.getElementById('clearBtn');
 
-// 切换界面函数
-function goResult(){ document.getElementById("container").style.transform="translateX(-100vw)" }
-function back(){ document.getElementById("container").style.transform="translateX(0)" }
+const greeting = document.getElementById('greeting');
+const bmiInfo = document.getElementById('bmiInfo');
+const mealsContainer = document.getElementById('mealsContainer');
+const foodTableWrapper = document.getElementById('foodTableWrapper');
+const badList = document.getElementById('badList');
+const userCountEl = document.getElementById('userCount');
+const tableWrap = document.getElementById('tableWrap');
 
+const calInput = document.getElementById('calInput');
+const calcTimeBtn = document.getElementById('calcTimeBtn');
+const timeResult = document.getElementById('timeResult');
+const copyBtn = document.getElementById('copyBtn');
 
-// 保存 + 跳转
-function saveUser(){
-let name=document.getElementById("name").value;
-let h=parseFloat(height.value)/100;
-let w=parseFloat(weight.value);
-let age=parseInt(ageEl.value);
+const ageCtx = document.getElementById('ageChart').getContext('2d');
 
-if(!name||!h||!w||!age) return alert("⚠ 请填写完整!");
-let bmi=(w/(h*h)).toFixed(1);
+/* ================= 不健康食品数据 ================= */
+const unhealthyFoods = [
+  { name: '炸鸡（1份）', kcal: 800, note: '高油高盐' },
+  { name: '薯条（中）', kcal: 450, note: '高脂肪' },
+  { name: '披萨（2片）', kcal: 650, note: '加工高热量' },
+  { name: '汉堡（含酱）', kcal: 550, note: '高脂高盐' },
+  { name: '奶油蛋糕（1块）', kcal: 520, note: '高糖高脂' },
+  { name: '糖果（30g）', kcal: 120, note: '空卡路里' },
+  { name: '啤酒（500ml）', kcal: 210, note: '液体热量' },
+  { name: '炸春卷（1份）', kcal: 330, note: '油炸类' },
+];
 
-db.ref("users").push({name,height:h*100,weight:w,age,bmi});
-document.getElementById("msg").innerHTML="✔ 已保存(BMI "+bmi+")";
+/* 渲染不健康食品 */
+function renderBadList(){
+  badList.innerHTML = '';
+  unhealthyFoods.forEach(f=>{
+    const el = document.createElement('div');
+    el.className = 'meal-item';
+    el.innerHTML = `<div style="font-weight:700">${f.name} <span style="float:right">${f.kcal} kcal</span></div>
+                    <div class="small">${f.note}</div>`;
+    badList.appendChild(el);
+  });
+}
+renderBadList();
 
-// 显示昵称
-document.getElementById("titleName").innerHTML="👤 "+name+" 的健康报告";
-// 显示推荐食谱
-generateMeals(bmi,age);
-goResult(); // <-- 页面切换！
+/* ================= BMI 计算与分类 ================= */
+function calcBMI(weightKg, heightCm){
+  const h = heightCm/100;
+  const bmiVal = weightKg / (h*h);
+  let category = '';
+  if (bmiVal < 18.5) category = '偏瘦';
+  else if (bmiVal < 25) category = '正常';
+  else if (bmiVal < 30) category = '超重';
+  else category = '肥胖';
+  return { bmi: Number(bmiVal.toFixed(1)), category };
 }
 
+/* ================= 食谱生成器（示例规则，可扩展） ================= */
+function generateMeals(bmi, age){
+  // 基础每日热量粗估（示例）
+  let baseCal = 2000;
+  if (age < 18) baseCal = 2200;
+  else if (age <= 30) baseCal = 2300;
+  else if (age <= 50) baseCal = 2000;
+  else baseCal = 1800;
 
-// 食谱逻辑
-function generateMeals(b){
-if(b<18.5) meal.innerHTML="早餐：花生燕麦粥+鸡蛋<br>午：牛肉意面+水果<br>晚：三文鱼饭+酸奶";
-else if(b<=24) meal.innerHTML="早餐：全麦+牛奶<br>午：鸡胸沙拉+糙米<br>晚：蔬菜汤+鸡蛋";
-else meal.innerHTML="早餐：黑咖啡+蛋白<br>午：西兰花鸡胸<br>晚：清炒蔬菜+玉米";
+  let factor = 1.0;
+  if (bmi < 18.5) factor = 1.12;
+  else if (bmi < 25) factor = 1.0;
+  else if (bmi < 30) factor = 0.85;
+  else factor = 0.75;
+
+  const dailyCal = Math.round(baseCal * factor);
+  const breakfastCal = Math.round(dailyCal * 0.25);
+  const lunchCal = Math.round(dailyCal * 0.40);
+  const dinnerCal = Math.round(dailyCal * 0.35);
+
+  function mealItems(mealCal, mealType){
+    const list = [];
+    if (mealType === 'breakfast'){
+      if (bmi < 18.5){
+        list.push({name:'燕麦牛奶粥 + 坚果', kcal: Math.round(mealCal*0.45), note:'高纤维与健康脂肪'});
+        list.push({name:'煎蛋 + 全麦面包', kcal: Math.round(mealCal*0.35), note:'优质蛋白'});
+        list.push({name:'小杯果汁', kcal: Math.round(mealCal*0.20), note:'维生素'});
+      } else if (bmi < 25){
+        list.push({name:'希腊酸奶 + 蓝莓 + 燕麦', kcal: Math.round(mealCal*0.5), note:'高蛋白、适量碳水'});
+        list.push({name:'水煮蛋', kcal: Math.round(mealCal*0.15), note:'优质蛋白'});
+        list.push({name:'全麦吐司', kcal: Math.round(mealCal*0.35), note:'缓释碳水'});
+      } else {
+        list.push({name:'蔬果沙拉 + 煮鸡蛋', kcal: Math.round(mealCal*0.55), note:'低脂高纤维'});
+        list.push({name:'小份燕麦', kcal: Math.round(mealCal*0.45), note:'控制血糖'});
+      }
+    } else if (mealType === 'lunch'){
+      if (bmi < 18.5){
+        list.push({name:'红烧牛肉 + 米饭(中)', kcal: Math.round(mealCal*0.55), note:'高热量优质蛋白'});
+        list.push({name:'蒸蔬菜', kcal: Math.round(mealCal*0.15), note:'维生素纤维'});
+        list.push({name:'豆腐汤', kcal: Math.round(mealCal*0.30), note:'植物蛋白'});
+      } else if (bmi < 25){
+        list.push({name:'三文鱼 + 藜麦/糙米', kcal: Math.round(mealCal*0.55), note:'优质脂肪与蛋白'});
+        list.push({name:'橄榄油色拉(少量)', kcal: Math.round(mealCal*0.20), note:'健康脂肪'});
+        list.push({name:'蒸蔬菜', kcal: Math.round(mealCal*0.25), note:'微量元素'});
+      } else {
+        list.push({name:'清蒸鸡胸 + 大量蔬菜', kcal: Math.round(mealCal*0.5), note:'低脂高蛋白'});
+        list.push({name:'少量糙米', kcal: Math.round(mealCal*0.3), note:'适量碳水'});
+        list.push({name:'清汤', kcal: Math.round(mealCal*0.2), note:'饱腹感'});
+      }
+    } else { // dinner
+      if (bmi < 18.5){
+        list.push({name:'奶酪意面(小)', kcal: Math.round(mealCal*0.55), note:'碳水+脂肪帮助增重'});
+        list.push({name:'煎鱼/鸡腿', kcal: Math.round(mealCal*0.35), note:'优质蛋白'});
+        list.push({name:'清炒蔬菜', kcal: Math.round(mealCal*0.10), note:'纤维'});
+      } else if (bmi < 25){
+        list.push({name:'鱼类或豆腐 + 大量蔬菜', kcal: Math.round(mealCal*0.55), note:'晚餐清淡，蛋白优先'});
+        list.push({name:'小份杂粮饭', kcal: Math.round(mealCal*0.30), note:'缓释碳水'});
+        list.push({name:'水果(小份)', kcal: Math.round(mealCal*0.15), note:'维生素'});
+      } else {
+        list.push({name:'清蒸鱼/豆腐 + 大量蔬菜', kcal: Math.round(mealCal*0.6), note:'低热量高蛋白'});
+        list.push({name:'少量主食', kcal: Math.round(mealCal*0.25), note:'晚间碳水控制'});
+        list.push({name:'温汤', kcal: Math.round(mealCal*0.15), note:'助眠'});
+      }
+    }
+    return list;
+  }
+
+  return {
+    dailyCal, breakfast: mealItems(breakfastCal,'breakfast'),
+    lunch: mealItems(lunchCal,'lunch'), dinner: mealItems(dinnerCal,'dinner')
+  };
 }
 
+/* 渲染餐单与食物表格 */
+function renderMealsAndTable(meals){
+  mealsContainer.innerHTML = '';
+  const mealNames = ['早餐','午餐','晚餐'];
+  const lists = [meals.breakfast, meals.lunch, meals.dinner];
+  lists.forEach((arr,i)=>{
+    const card = document.createElement('div');
+    card.className = 'meal-item';
+    const total = arr.reduce((s,a)=>s+a.kcal,0);
+    card.innerHTML = `<div style="font-weight:700">${mealNames[i]} — 约 ${total} kcal</div>`;
+    arr.forEach(d=>{
+      const row = document.createElement('div');
+      row.style.marginTop = '8px';
+      row.innerHTML = `<div style="font-weight:600">${d.name} <span style="float:right">${d.kcal} kcal</span></div>
+                       <div class="small">${d.note}</div>`;
+      card.appendChild(row);
+    });
+    mealsContainer.appendChild(card);
+  });
 
-// 饼图统计
-let chart=new Chart(chart,{
-type:"doughnut",
-data:{labels:["正常","超重"], datasets:[{data:[0,0],backgroundColor:["#4cff88","#ff3a3a"]}]}
+  // 食物表格
+  const table = document.createElement('table');
+  table.innerHTML = `<thead><tr><th>食物</th><th>热量</th><th>营养要点</th></tr></thead><tbody></tbody>`;
+  const tbody = table.querySelector('tbody');
+  [...meals.breakfast,...meals.lunch,...meals.dinner].forEach(d=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td style="font-weight:600">${d.name}</td><td>${d.kcal} kcal</td><td class="small">${d.note}</td>`;
+    tbody.appendChild(tr);
+  });
+  foodTableWrapper.innerHTML = '';
+  foodTableWrapper.appendChild(table);
+}
+
+/* ================= 运动时间估算 ================= */
+const activities = [
+  { name:'快走（5 km/h）', min:240, max:320 },
+  { name:'慢跑（8 km/h）', min:550, max:700 },
+  { name:'骑行（16–20 km/h）', min:400, max:600 },
+  { name:'HIIT（高强度）', min:600, max:900 },
+  { name:'游泳（中等）', min:400, max:600 }
+];
+calcTimeBtn.addEventListener('click', ()=>{
+  const K = Number(calInput.value);
+  if (!K || K <= 0){ timeResult.textContent = '请输入正数的热量值（kcal）。'; return; }
+  let out = `消耗 ${K} kcal 估算：\n`;
+  activities.forEach(a=>{
+    const minH = (K / a.max) * 60; // minutes
+    const maxH = (K / a.min) * 60;
+    out += `${a.name}：约 ${Math.round(minH)} - ${Math.round(maxH)} 分钟\n`;
+  });
+  timeResult.textContent = out;
 });
-db.ref("users").on("value",snap=>{
-let n=0,o=0;
-snap.forEach(v=>v.val().bmi<=24?n++:o++);
-chart.data.datasets[0].data=[n,o];
-chart.update();
+copyBtn.addEventListener('click', ()=>{
+  const txt = timeResult.textContent;
+  if (!txt) return alert('先计算再复制');
+  navigator.clipboard?.writeText(txt).then(()=>alert('已复制到剪贴板')).catch(()=>alert('复制失败'));
 });
+
+/* ================= 年龄段统计图（Chart.js） ================= */
+const ageGroups = ['<18','18-30','31-45','46-60','60+'];
+let ageChart = new Chart(ageCtx, {
+  type:'bar',
+  data:{
+    labels: ageGroups,
+    datasets:[
+      { label:'正常/偏瘦 %', data:[0,0,0,0,0], backgroundColor:'#8adf8a' },
+      { label:'超重/肥胖 %', data:[0,0,0,0,0], backgroundColor:'#ff7b7b' }
+    ]
+  },
+  options:{
+    responsive:true,
+    plugins:{ legend:{ position:'bottom', labels:{color:'#000'} } },
+    scales:{
+      x:{ ticks:{ color:'#000' } },
+      y:{ ticks:{ color:'#000' }, beginAtZero:true, max:100 }
+    }
+  }
+});
+
+/* ================= 实时数据库监听与表格渲染 ================= */
+function attachRealtimeListener(){
+  const ref = db.ref('users');
+  ref.on('value', snapshot=>{
+    const val = snapshot.val() || {};
+    const entries = Object.entries(val).map(([id,data]) => ({ id, ...data }));
+    entries.sort((a,b)=> (b.timestamp||0) - (a.timestamp||0));
+    const recent = entries.slice(0,50);
+
+    // 更新用户数
+    userCountEl.textContent = entries.length;
+
+    // 最新 BMI 显示（最近一条）
+    if (recent.length>0){
+      const latest = recent[0];
+      document.getElementById('greeting').innerHTML = `Hi，${escapeHtml(latest.name||'用户')} · 最新 BMI：<strong>${latest.bmi}</strong> · ${latest.category||''}`;
+    } else {
+      document.getElementById('greeting').innerHTML = '个性化健康建议';
+    }
+
+    // 年龄段统计
+    const groupCounts = ageGroups.map(()=>({ normal:0, over:0, total:0 }));
+    entries.forEach(u=>{
+      const age = Number(u.age) || 0;
+      const bmi = Number(u.bmi) || 0;
+      let idx = 0;
+      if (age < 18) idx = 0;
+      else if (age <= 30) idx = 1;
+      else if (age <= 45) idx = 2;
+      else if (age <= 60) idx = 3;
+      else idx = 4;
+      groupCounts[idx].total += 1;
+      if (bmi >= 25) groupCounts[idx].over += 1;
+      else groupCounts[idx].normal += 1;
+    });
+
+    const normalPerc = groupCounts.map(g => g.total ? Math.round(100 * (g.normal/g.total)) : 0);
+    const overPerc = groupCounts.map(g => g.total ? Math.round(100 * (g.over/g.total)) : 0);
+
+    ageChart.data.datasets[0].data = normalPerc;
+    ageChart.data.datasets[1].data = overPerc;
+    ageChart.update();
+
+    // 渲染最近 50 条表格
+    renderTable(recent);
+  });
+}
+attachRealtimeListener();
+
+/* 表格渲染 */
+function renderTable(list){
+  const wrapper = document.createElement('div');
+  wrapper.innerHTML = `<table><thead><tr><th>姓名</th><th>年龄</th><th>身高</th><th>体重</th><th>BMI</th><th>分类</th><th>时间</th></tr></thead><tbody></tbody></table>`;
+  const tbody = wrapper.querySelector('tbody');
+  list.forEach(item=>{
+    const date = new Date(item.timestamp || Date.now());
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td style="font-weight:700">${escapeHtml(item.name||'')}</td>
+                    <td>${item.age||''}</td>
+                    <td>${item.height||''}</td>
+                    <td>${item.weight||''}</td>
+                    <td>${item.bmi||''}</td>
+                    <td>${item.category||''}</td>
+                    <td class="small">${date.toLocaleString()}</td>`;
+    tbody.appendChild(tr);
+  });
+  tableWrap.innerHTML = '';
+  tableWrap.appendChild(wrapper);
+}
+
+/* 防注入简单转义 */
+function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g, (m)=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+/* ================= 保存数据到 Firebase ================= */
+saveBtn.addEventListener('click', ()=>{
+  const name = nameInput.value.trim();
+  const height = parseFloat(heightInput.value);
+  const weight = parseFloat(weightInput.value);
+  const age = parseInt(ageInput.value);
+
+  if (!name || !height || !weight || !age){
+    alert('请完整填写姓名、身高、体重和年龄。');
+    return;
+  }
+
+  const { bmi, category } = calcBMI(weight, height);
+  const record = {
+    name, height, weight, age, bmi, category,
+    timestamp: Date.now()
+  };
+
+  // push -> 自动生成 id
+  const newRef = db.ref('users').push();
+  newRef.set(record)
+    .then(()=>{
+      // 成功后立即显示生成内容
+      greeting.innerHTML = `Hi，${escapeHtml(name)} 👋 · BMI：<strong>${bmi}</strong> · ${category}`;
+      bmiInfo.innerHTML = `<div class="small">每日估算能量需求与膳食按年龄与体重状态智能调整（示例算法）。</div>`;
+      const meals = generateMeals(bmi, age);
+      renderMealsAndTable(meals);
+      // 清空表单（可选）
+      // nameInput.value=''; heightInput.value=''; weightInput.value=''; ageInput.value='';
+    })
+    .catch(err=>{
+      console.error('写入失败：', err);
+      alert('保存失败，请检查 Firebase 数据库规则或网络（控制台有详细错误）。');
+    });
+});
+
+/* 清空表单 */
+clearBtn.addEventListener('click', ()=>{
+  nameInput.value=''; heightInput.value=''; weightInput.value=''; ageInput.value='';
+  greeting.innerHTML = '个性化健康建议';
+  bmiInfo.innerHTML = '请在左侧填写信息并保存以查看详细建议';
+  mealsContainer.innerHTML = '';
+  foodTableWrapper.innerHTML = '';
+});
+
+/* 初始化占位示例 */
+(function initDemo(){
+  mealsContainer.innerHTML = `<div class="meal-item"><div style="font-weight:700">示例：请填写信息并保存以获取个性化建议</div></div>`;
+  foodTableWrapper.innerHTML = `<div class="small">保存后将在此显示每道菜的热量与营养要点</div>`;
+})();
+
 </script>
 </body>
 </html>
