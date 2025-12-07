@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>吃豆人游戏</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: #fff;
+        }
+
+        .container {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .login-screen, .game-screen {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        h1 {
+            font-size: 3em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            color: #FFD700;
+        }
+
+        .login-form {
+            margin-top: 30px;
+        }
+
+        input[type="text"] {
+            padding: 15px 20px;
+            font-size: 18px;
+            border: none;
+            border-radius: 10px;
+            width: 300px;
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+        }
+
+        button {
+            padding: 15px 40px;
+            font-size: 18px;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            color: #333;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        #gameCanvas {
+            border: 4px solid #FFD700;
+            border-radius: 10px;
+            background: #000;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            margin: 20px auto;
+            display: block;
+        }
+
+        .game-info {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .info-item {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px 30px;
+            border-radius: 10px;
+            backdrop-filter: blur(5px);
+        }
+
+        .leaderboard {
+            margin-top: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .leaderboard h2 {
+            color: #FFD700;
+            margin-bottom: 15px;
+        }
+
+        .leaderboard-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            margin: 5px 0;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+        }
+
+        .rank {
+            color: #FFD700;
+            font-weight: bold;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 40px;
+            border-radius: 20px;
+            border: 3px solid #FFD700;
+            z-index: 100;
+        }
+
+        .game-over h2 {
+            font-size: 2.5em;
+            color: #FFD700;
+            margin-bottom: 20px;
+        }
+
+        .controls {
+            margin-top: 20px;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="loginScreen" class="login-screen">
+            <h1>🎮 吃豆人游戏 🎮</h1>
+            <div class="login-form">
+                <input type="text" id="playerName" placeholder="请输入您的姓名" maxlength="20">
+                <br>
+                <button onclick="login()">开始游戏</button>
+            </div>
+            <div class="controls">
+                <p>🎯 使用方向键控制吃豆人</p>
+                <p>🔵 吃掉所有小球获胜</p>
+                <p>👻 避开鬼魂</p>
+            </div>
+        </div>
+
+        <div id="gameScreen" class="game-screen hidden">
+            <h1>吃豆人</h1>
+            <div class="game-info">
+                <div class="info-item">
+                    <span id="playerDisplay"></span>
+                </div>
+                <div class="info-item">
+                    得分: <span id="score">0</span>
+                </div>
+                <div class="info-item">
+                    生命: <span id="lives">3</span> ❤️
+                </div>
+            </div>
+            <canvas id="gameCanvas" width="600" height="600"></canvas>
+            <button onclick="resetGame()">重新开始</button>
+            
+            <div class="leaderboard">
+                <h2>🏆 排行榜 TOP 10</h2>
+                <div id="leaderboardList"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+    <script>
+        // Firebase配置（如不使用请留空）
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            databaseURL: "YOUR_DATABASE_URL",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+
+        // 初始化Firebase（可选）
+        let database = null;
+        try {
+            if (firebase && firebase.initializeApp) {
+                firebase.initializeApp(firebaseConfig);
+                database = firebase.database();
+            }
+        } catch (error) {
+            console.log("Firebase未配置或初始化失败，使用本地存储模式", error);
+            database = null;
+        }
+
+        // 游戏变量
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const gridSize = 30;
+        const cols = Math.floor(canvas.width / gridSize);
+        const rows = Math.floor(canvas.height / gridSize);
+
+        let playerName = '';
+        let score = 0;
+        let lives = 3;
+        let gameLoop;
+        let pacman = { x: 1, y: 1, direction: 'right', nextDirection: 'right', mouthOpen: true };
+        let ghosts = [];
+        let dots = [];
+        let maze = [];
+
+        // 创建迷宫
+        function createMaze() {
+            maze = [];
+            for (let y = 0; y < rows; y++) {
+                maze[y] = [];
+                for (let x = 0; x < cols; x++) {
+                    if (y === 0 || y === rows - 1 || x === 0 || x === cols - 1) {
+                        maze[y][x] = 1; // 墙
+                    } else if ((x % 4 === 0 && y % 4 === 0) || (x % 6 === 3 && y % 3 === 2)) {
+                        maze[y][x] = 1;
+                    } else {
+                        maze[y][x] = 0; // 空地
+                    }
+                }
+            }
+            maze[1][1] = 0;
+            maze[rows - 2][cols - 2] = 0;
+        }
+
+        // 创建豆子
+        function createDots() {
+            dots = [];
+            for (let y = 0; y < rows; y++) {
+                for (let x = 0; x < cols; x++) {
+                    if (maze[y][x] === 0 && !(x === 1 && y === 1)) {
+                        dots.push({ x, y });
+                    }
+                }
+            }
+        }
+
+        // 创建鬼魂
+        function createGhosts() {
+            ghosts = [
+                { x: cols - 2, y: 1, color: '#FF0000', direction: 'left' },
+                { x: 1, y: rows - 2, color: '#FF69B4', direction: 'right' },
+                { x: cols - 2, y: rows - 2, color: '#00FFFF', direction: 'up' }
+            ];
+        }
+
+        // 登录
+        function login() {
+            const name = document.getElementById('playerName').value.trim();
+            if (name === '') {
+                alert('请输入您的姓名！');
+                return;
+            }
+            playerName = name;
+            document.getElementById('playerDisplay').textContent = playerName;
+            document.getElementById('loginScreen').classList.add('hidden');
+            document.getElementById('gameScreen').classList.remove('hidden');
+            initGame();
+        }
+
+        // 初始化游戏
+        function initGame() {
+            createMaze();
+            createDots();
+            createGhosts();
+            pacman = { x: 1, y: 1, direction: 'right', nextDirection: 'right', mouthOpen: true };
+            score = 0;
+            lives = 3;
+            updateScore();
+            updateLives();
+            loadLeaderboard();
+            if (gameLoop) clearInterval(gameLoop);
+            gameLoop = setInterval(update, 150);
+        }
+
+        // 重置游戏
+        function resetGame() {
+            initGame();
+        }
+
+        // 绘制
+        function draw() {
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 绘制迷宫
+            ctx.fillStyle = '#0000FF';
+            for (let y = 0; y < rows; y++) {
+                for (let x = 0; x < cols; x++) {
+                    if (maze[y][x] === 1) {
+                        ctx.fillRect(x * gridSize, y * gridSize, gridSize, gridSize);
+                    }
+                }
+            }
+
+            // 绘制豆子
+            ctx.fillStyle = '#FFFF00';
+            dots.forEach(dot => {
+                ctx.beginPath();
+                ctx.arc(dot.x * gridSize + gridSize / 2, dot.y * gridSize + gridSize / 2, 4, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // 绘制吃豆人
+            ctx.fillStyle = '#FFFF00';
+            ctx.beginPath();
+            const px = pacman.x * gridSize + gridSize / 2;
+            const py = pacman.y * gridSize + gridSize / 2;
+            const radius = gridSize / 2 - 2;
+            
+            let startAngle = 0.2 * Math.PI;
+            let endAngle = 1.8 * Math.PI;
+            
+            if (pacman.direction === 'right') {
+                startAngle = 0.2 * Math.PI;
+                endAngle = 1.8 * Math.PI;
+            } else if (pacman.direction === 'left') {
+                startAngle = 1.2 * Math.PI;
+                endAngle = 0.8 * Math.PI;
+            } else if (pacman.direction === 'up') {
+                startAngle = 1.7 * Math.PI;
+                endAngle = 1.3 * Math.PI;
+            } else if (pacman.direction === 'down') {
+                startAngle = 0.7 * Math.PI;
+                endAngle = 0.3 * Math.PI;
+            }
+
+            if (pacman.mouthOpen) {
+                ctx.arc(px, py, radius, startAngle, endAngle);
+                ctx.lineTo(px, py);
+            } else {
+                ctx.arc(px, py, radius, 0, Math.PI * 2);
+            }
+            ctx.fill();
+
+            // 绘制鬼魂（改进尺寸）
+            const ghostRadius = gridSize / 2 - 6;
+            ghosts.forEach(ghost => {
+                ctx.fillStyle = ghost.color;
+                const gx = ghost.x * gridSize + gridSize / 2;
+                const gy = ghost.y * gridSize + gridSize / 2;
+                
+                ctx.beginPath();
+                ctx.arc(gx, gy - 4, ghostRadius, Math.PI, 0);
+                // 身体下方波浪
+                ctx.lineTo(gx + ghostRadius, gy + ghostRadius);
+                ctx.lineTo(gx + ghostRadius / 2, gy + ghostRadius / 2);
+                ctx.lineTo(gx, gy + ghostRadius);
+                ctx.lineTo(gx - ghostRadius / 2, gy + ghostRadius / 2);
+                ctx.lineTo(gx - ghostRadius, gy + ghostRadius);
+                ctx.closePath();
+                ctx.fill();
+
+                // 眼睛
+                ctx.fillStyle = '#FFF';
+                ctx.beginPath();
+                ctx.arc(gx - 6, gy - 6, 4, 0, Math.PI * 2);
+                ctx.arc(gx + 2, gy - 6, 4, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.fillStyle = '#000';
+                ctx.beginPath();
+                ctx.arc(gx - 6, gy - 6, 2, 0, Math.PI * 2);
+                ctx.arc(gx + 2, gy - 6, 2, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        // 更新游戏
+        function update() {
+            // 移动吃豆人
+            pacman.direction = pacman.nextDirection;
+            let newX = pacman.x;
+            let newY = pacman.y;
+
+            if (pacman.direction === 'right') newX++;
+            else if (pacman.direction === 'left') newX--;
+            else if (pacman.direction === 'up') newY--;
+            else if (pacman.direction === 'down') newY++;
+
+            if (newX >= 0 && newX < cols && newY >= 0 && newY < rows && maze[newY][newX] === 0) {
+                pacman.x = newX;
+                pacman.y = newY;
+            }
+
+            pacman.mouthOpen = !pacman.mouthOpen;
+
+            // 吃豆子
+            const dotIndex = dots.findIndex(dot => dot.x === pacman.x && dot.y === pacman.y);
+            if (dotIndex !== -1) {
+                dots.splice(dotIndex, 1);
+                score += 10;
+                updateScore();
+            }
+
+            // 检查胜利
+            if (dots.length === 0) {
+                clearInterval(gameLoop);
+                saveScore();
+                setTimeout(() => {
+                    alert('恭喜！您赢了！🎉');
+                    initGame();
+                }, 100);
+                return;
+            }
+
+            // 移动鬼魂（简单随机移动）
+            ghosts.forEach(ghost => {
+                const directions = ['up', 'down', 'left', 'right'];
+                const validDirections = directions.filter(dir => {
+                    let nx = ghost.x, ny = ghost.y;
+                    if (dir === 'right') nx++;
+                    else if (dir === 'left') nx--;
+                    else if (dir === 'up') ny--;
+                    else if (dir === 'down') ny++;
+                    return nx >= 0 && nx < cols && ny >= 0 && ny < rows && maze[ny][nx] === 0;
+                });
+
+                if (validDirections.length > 0) {
+                    ghost.direction = validDirections[Math.floor(Math.random() * validDirections.length)];
+                }
+
+                if (ghost.direction === 'right') ghost.x++;
+                else if (ghost.direction === 'left') ghost.x--;
+                else if (ghost.direction === 'up') ghost.y--;
+                else if (ghost.direction === 'down') ghost.y++;
+            });
+
+            // 检查碰撞
+            const collision = ghosts.some(ghost => ghost.x === pacman.x && ghost.y === pacman.y);
+            if (collision) {
+                lives--;
+                updateLives();
+                if (lives <= 0) {
+                    clearInterval(gameLoop);
+                    saveScore();
+                    setTimeout(() => {
+                        alert('游戏结束！您的得分：' + score);
+                        initGame();
+                    }, 100);
+                    return;
+                } else {
+                    pacman.x = 1;
+                    pacman.y = 1;
+                }
+            }
+
+            draw();
+        }
+
+        // 更新分数
+        function updateScore() {
+            document.getElementById('score').textContent = score;
+        }
+
+        // 更新生命
+        function updateLives() {
+            document.getElementById('lives').textContent = lives;
+        }
+
+        // 本地保存分数（用于Firebase不可用时的回退）
+        function saveLocalScore() {
+            try {
+                const stored = JSON.parse(localStorage.getItem('pacman_scores') || '[]');
+                stored.push({ name: playerName || '匿名', score: score, timestamp: Date.now() });
+                localStorage.setItem('pacman_scores', JSON.stringify(stored));
+                loadLeaderboard();
+            } catch (e) {
+                console.error('本地保存失败', e);
+            }
+        }
+
+        function loadLocalLeaderboard() {
+            try {
+                const stored = JSON.parse(localStorage.getItem('pacman_scores') || '[]');
+                stored.sort((a, b) => b.score - a.score);
+                return stored.slice(0, 10);
+            } catch (e) {
+                return [];
+            }
+        }
+
+        // 保存分数到Firebase或本地
+        function saveScore() {
+            if (!database) {
+                console.log('Firebase未配置，保存到本地排行榜');
+                saveLocalScore();
+                return;
+            }
+            
+            const scoresRef = database.ref('scores');
+            scoresRef.push({
+                name: playerName || '匿名',
+                score: score,
+                timestamp: Date.now()
+            }).then(() => {
+                loadLeaderboard();
+            }).catch(err => {
+                console.log('Firebase 保存失败，回退到本地：', err);
+                saveLocalScore();
+            });
+        }
+
+        // 加载排行榜（优先Firebase，回退本地）
+        function loadLeaderboard() {
+            if (!database) {
+                const local = loadLocalLeaderboard();
+                renderLeaderboard(local);
+                return;
+            }
+
+            const scoresRef = database.ref('scores');
+            scoresRef.orderByChild('score').limitToLast(10).on('value', (snapshot) => {
+                const scores = [];
+                snapshot.forEach((child) => {
+                    scores.push(child.val());
+                });
+                
+                scores.sort((a, b) => b.score - a.score);
+                renderLeaderboard(scores);
+            }, (err) => {
+                console.log('从Firebase读取排行榜失败，使用本地数据', err);
+                const local = loadLocalLeaderboard();
+                renderLeaderboard(local);
+            });
+        }
+
+        function renderLeaderboard(scores) {
+            let html = '';
+            if (!scores || scores.length === 0) {
+                html = '<div class="leaderboard-item">暂无记录</div>';
+            } else {
+                scores.slice(0, 10).forEach((item, index) => {
+                    html += `<div class="leaderboard-item">
+                        <span class="rank">#${index + 1}</span>
+                        <span>${item.name}</span>
+                        <span>${item.score}</span>
+                    </div>`;
+                });
+            }
+            document.getElementById('leaderboardList').innerHTML = html;
+        }
+
+        // 键盘控制
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowUp') {
+                pacman.nextDirection = 'up';
+                e.preventDefault();
+            } else if (e.key === 'ArrowDown') {
+                pacman.nextDirection = 'down';
+                e.preventDefault();
+            } else if (e.key === 'ArrowLeft') {
+                pacman.nextDirection = 'left';
+                e.preventDefault();
+            } else if (e.key === 'ArrowRight') {
+                pacman.nextDirection = 'right';
+                e.preventDefault();
+            }
+        });
+    </script>
+</body>
+</html>
